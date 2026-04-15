@@ -1,0 +1,336 @@
+{% extends "store/staff/base.html" %}
+
+{% block title %}Dashboard - Staff{% endblock %}
+
+{% block page_title %}Bảng điều khiển{% endblock %}
+
+{% block content %}
+<style>
+    .dashboard-charts {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+
+    .chart-card {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 16px;
+    }
+
+    .chart-card h3 {
+        font-size: 15px;
+        margin-bottom: 10px;
+        font-weight: 600;
+        color: #334155;
+    }
+
+    .chart-box {
+        position: relative;
+        height: 230px;
+    }
+</style>
+
+<div class="breadcrumb">
+    <span>Trang chủ</span>
+</div>
+
+<!-- Statistics -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon stat-icon-blue">
+            <i data-lucide="box"></i>
+        </div>
+        <div class="stat-content">
+            <h3>Tổng sản phẩm</h3>
+            <div class="stat-value">{{ total_products }}</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon stat-icon-blue">
+            <i data-lucide="monitor"></i>
+        </div>
+        <div class="stat-content">
+            <h3>Laptop</h3>
+            <div class="stat-value">{{ total_computers }}</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon stat-icon-blue">
+            <i data-lucide="smartphone"></i>
+        </div>
+        <div class="stat-content">
+            <h3>Điện thoại</h3>
+            <div class="stat-value">{{ total_mobiles }}</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon stat-icon-blue">
+            <i data-lucide="shirt"></i>
+        </div>
+        <div class="stat-content">
+            <h3>Quần áo</h3>
+            <div class="stat-value">{{ total_clothes }}</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon stat-icon-blue">
+            <i data-lucide="package"></i>
+        </div>
+        <div class="stat-content">
+            <h3>Đơn hàng</h3>
+            <div class="stat-value">{{ total_orders }}</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon stat-icon-blue">
+            <i data-lucide="layers"></i>
+        </div>
+        <div class="stat-content">
+            <h3>Nhóm hàng mới</h3>
+            <div class="stat-value">{{ total_new_products }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="dashboard-charts">
+    <div class="chart-card">
+        <h3>Phân bố sản phẩm theo nhóm</h3>
+        <div class="chart-box">
+            <canvas id="productsByTypeChart"></canvas>
+        </div>
+    </div>
+
+    <div class="chart-card">
+        <h3>Cảnh báo tồn kho theo nhóm</h3>
+        <div class="chart-box">
+            <canvas id="lowStockByTypeChart"></canvas>
+        </div>
+    </div>
+
+    <div class="chart-card">
+        <h3>Trạng thái đơn hàng</h3>
+        <div class="chart-box">
+            <canvas id="ordersStatusChart"></canvas>
+        </div>
+    </div>
+
+    <div class="chart-card">
+        <h3>Tổng quan KPI</h3>
+        <div class="chart-box">
+            <canvas id="kpiOverviewChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Low Stock Alert -->
+{% if low_stock_items %}
+<div class="card">
+    <div class="card-title">
+        <i data-lucide="alert-triangle" style="display: inline; margin-right: 8px; color: var(--warning);"></i>
+        Sản phẩm hết hàng (Còn &lt; 5)
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Loại</th>
+                <th>Sản phẩm</th>
+                <th>Số lượng</th>
+                <th>Hành động</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in low_stock_items %}
+            <tr>
+                <td>
+                    {% if item.type == 'computer' %}
+                        <span class="badge badge-warning">Laptop</span>
+                    {% elif item.type == 'mobile' %}
+                        <span class="badge badge-warning">Điện thoại</span>
+                    {% elif item.type == 'clothes' %}
+                        <span class="badge badge-warning">Quần áo</span>
+                    {% elif item.type == 'tablet' %}
+                        <span class="badge badge-warning">Tablet</span>
+                    {% elif item.type == 'audio' %}
+                        <span class="badge badge-warning">Audio</span>
+                    {% elif item.type == 'wearable' %}
+                        <span class="badge badge-warning">Wearable</span>
+                    {% elif item.type == 'component' %}
+                        <span class="badge badge-warning">Linh kiện</span>
+                    {% elif item.type == 'peripheral' %}
+                        <span class="badge badge-warning">Phụ kiện PC</span>
+                    {% elif item.type == 'monitor' %}
+                        <span class="badge badge-warning">Màn hình</span>
+                    {% elif item.type == 'accessory' %}
+                        <span class="badge badge-warning">Phụ kiện điện thoại</span>
+                    {% elif item.type == 'charging' %}
+                        <span class="badge badge-warning">Sạc & pin</span>
+                    {% elif item.type == 'book' %}
+                        <span class="badge badge-warning">Sách</span>
+                    {% else %}
+                        <span class="badge badge-warning">Khác</span>
+                    {% endif %}
+                </td>
+                <td>{{ item.name }}</td>
+                <td>
+                    <strong style="color: var(--danger);">{{ item.stock }}</strong>
+                </td>
+                <td>
+                    {% if item.type == 'computer' %}
+                        <a href="{% url 'staff-products-computer' %}" class="btn btn-primary btn-small">Cập nhật</a>
+                    {% elif item.type == 'mobile' %}
+                        <a href="{% url 'staff-products-mobile' %}" class="btn btn-primary btn-small">Cập nhật</a>
+                    {% elif item.type == 'clothes' %}
+                        <a href="{% url 'staff-products-clothes' %}" class="btn btn-primary btn-small">Cập nhật</a>
+                    {% elif item.type == 'tablet' %}
+                        <a href="{% url 'staff-products-tablet' %}" class="btn btn-primary btn-small">Cập nhật</a>
+                    {% elif item.type == 'audio' %}
+                        <a href="{% url 'staff-products-audio' %}" class="btn btn-primary btn-small">Cập nhật</a>
+                    {% elif item.type == 'wearable' %}
+                        <a href="{% url 'staff-products-wearable' %}" class="btn btn-primary btn-small">Cập nhật</a>
+                    {% elif item.type == 'component' %}
+                        <a href="{% url 'staff-products-component' %}" class="btn btn-primary btn-small">Cập nhật</a>
+                    {% elif item.type == 'peripheral' %}
+                        <a href="{% url 'staff-products-peripheral' %}" class="btn btn-primary btn-small">Cập nhật</a>
+                    {% elif item.type == 'monitor' %}
+                        <a href="{% url 'staff-products-monitor' %}" class="btn btn-primary btn-small">Cập nhật</a>
+                    {% elif item.type == 'accessory' %}
+                        <a href="{% url 'staff-products-accessory' %}" class="btn btn-primary btn-small">Cập nhật</a>
+                    {% elif item.type == 'charging' %}
+                        <a href="{% url 'staff-products-charging' %}" class="btn btn-primary btn-small">Cập nhật</a>
+                    {% elif item.type == 'book' %}
+                        <a href="{% url 'staff-products-book' %}" class="btn btn-primary btn-small">Cập nhật</a>
+                    {% else %}
+                        <a href="{% url 'staff-dashboard' %}" class="btn btn-primary btn-small">Xem</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<!-- Quick Actions -->
+<div class="card">
+    <div class="card-title">Thao tác nhanh</div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+        <a href="{% url 'staff-products-computer' %}" class="btn btn-primary" style="justify-content: center;">
+            <i data-lucide="plus"></i> Thêm Laptop
+        </a>
+        <a href="{% url 'staff-products-mobile' %}" class="btn btn-primary" style="justify-content: center;">
+            <i data-lucide="plus"></i> Thêm Điện thoại
+        </a>
+        <a href="{% url 'staff-products-tablet' %}" class="btn btn-primary" style="justify-content: center;">
+            <i data-lucide="plus"></i> Thêm Tablet
+        </a>
+        <a href="{% url 'staff-products-component' %}" class="btn btn-primary" style="justify-content: center;">
+            <i data-lucide="plus"></i> Thêm Linh kiện
+        </a>
+        <a href="{% url 'staff-orders' %}" class="btn btn-secondary" style="justify-content: center;">
+            <i data-lucide="packages"></i> Xem đơn hàng
+        </a>
+        <a href="{% url 'staff-customers' %}" class="btn btn-secondary" style="justify-content: center;">
+            <i data-lucide="users"></i> Xem khách hàng
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    (function () {
+        const productLabels = {{ chart_product_labels|safe }};
+        const productValues = {{ chart_product_values|safe }};
+        const lowStockLabels = {{ chart_low_stock_labels|safe }};
+        const lowStockValues = {{ chart_low_stock_values|safe }};
+        const orderLabels = {{ chart_order_labels|safe }};
+        const orderValues = {{ chart_order_values|safe }};
+        const kpiLabels = {{ chart_kpi_labels|safe }};
+        const kpiValues = {{ chart_kpi_values|safe }};
+
+        const palette = [
+            '#2563eb', '#0ea5e9', '#06b6d4', '#14b8a6', '#22c55e', '#84cc16',
+            '#f59e0b', '#f97316', '#ef4444', '#a855f7', '#8b5cf6', '#6366f1'
+        ];
+
+        new Chart(document.getElementById('productsByTypeChart'), {
+            type: 'doughnut',
+            data: {
+                labels: productLabels,
+                datasets: [{
+                    data: productValues,
+                    backgroundColor: palette,
+                    borderWidth: 0,
+                }],
+            },
+            options: {
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } },
+            },
+        });
+
+        new Chart(document.getElementById('lowStockByTypeChart'), {
+            type: 'bar',
+            data: {
+                labels: lowStockLabels,
+                datasets: [{
+                    label: 'Sản phẩm sắp hết',
+                    data: lowStockValues,
+                    backgroundColor: '#f59e0b',
+                    borderRadius: 6,
+                }],
+            },
+            options: {
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+                plugins: { legend: { display: false } },
+            },
+        });
+
+        new Chart(document.getElementById('ordersStatusChart'), {
+            type: 'pie',
+            data: {
+                labels: orderLabels,
+                datasets: [{
+                    data: orderValues,
+                    backgroundColor: ['#f59e0b', '#3b82f6', '#06b6d4', '#22c55e', '#ef4444'],
+                    borderWidth: 0,
+                }],
+            },
+            options: {
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } },
+            },
+        });
+
+        new Chart(document.getElementById('kpiOverviewChart'), {
+            type: 'radar',
+            data: {
+                labels: kpiLabels,
+                datasets: [{
+                    label: 'KPI hiện tại',
+                    data: kpiValues,
+                    fill: true,
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.2)',
+                    pointBackgroundColor: '#2563eb',
+                }],
+            },
+            options: {
+                maintainAspectRatio: false,
+                scales: { r: { beginAtZero: true } },
+                plugins: { legend: { display: false } },
+            },
+        });
+    })();
+</script>
+{% endblock %}

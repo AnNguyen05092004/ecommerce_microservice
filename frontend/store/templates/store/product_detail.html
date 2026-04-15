@@ -1,0 +1,441 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ product.name }} | TechStore</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'store/css/site.css' %}" />
+</head>
+<body class="inner-page">
+  <div class="shipping-bar"><i data-lucide="truck"></i> Miễn phí vận chuyển toàn quốc cho đơn trên 500.000đ</div>
+
+  <header class="main-header template-header">
+    <a class="brand template-brand" href="/"><i data-lucide="book-open-text"></i> TechStore</a>
+    <form class="template-search" action="/products" method="get">
+      <i data-lucide="search"></i>
+      <input type="text" name="search" placeholder="Tìm sản phẩm, thương hiệu..." />
+    </form>
+    <nav class="main-nav template-nav">
+      <a href="/">Trang chủ</a>
+      <details class="category-menu">
+        <summary>Danh mục</summary>
+        <div class="category-dropdown">
+          <a href="/products?type=computer"><span class="cd-icon"><i data-lucide="laptop"></i></span>Laptop</a>
+          <a href="/products?type=mobile"><span class="cd-icon"><i data-lucide="smartphone"></i></span>Điện thoại</a>
+          <a href="/products?type=tablet"><span class="cd-icon"><i data-lucide="tablet"></i></span>Tablet</a>
+          <a href="/products?type=audio"><span class="cd-icon"><i data-lucide="headphones"></i></span>Audio</a>
+          <a href="/products?type=wearable"><span class="cd-icon"><i data-lucide="watch"></i></span>Wearable</a>
+          <a href="/products?type=component"><span class="cd-icon"><i data-lucide="cpu"></i></span>Linh kiện</a>
+          <a href="/products?type=peripheral"><span class="cd-icon"><i data-lucide="mouse-pointer-2"></i></span>Phụ kiện PC</a>
+          <a href="/products?type=monitor"><span class="cd-icon"><i data-lucide="monitor"></i></span>Màn hình</a>
+          <a href="/products?type=accessory"><span class="cd-icon"><i data-lucide="plug"></i></span>Phụ kiện điện thoại</a>
+          <a href="/products?type=charging"><span class="cd-icon"><i data-lucide="battery-charging"></i></span>Sạc và pin</a>
+          <a href="/products?type=book"><span class="cd-icon"><i data-lucide="book-open"></i></span>Sách</a>
+        </div>
+      </details>
+    </nav>
+    <div class="template-actions">
+      <a class="cart-btn" href="/cart" aria-label="Giỏ hàng">
+        <i data-lucide="shopping-cart"></i>
+        <span>{{ cart_count }}</span>
+      </a>
+      {% if auth_user_type == 'staff' %}
+      <details class="account-menu">
+        <summary class="template-user account-trigger"><i data-lucide="user"></i> Staff <i data-lucide="chevron-down"></i></summary>
+        <div class="account-dropdown">
+          <a href="/staff/dashboard"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+          <a class="danger" href="/logout"><i data-lucide="log-out"></i> Đăng xuất</a>
+        </div>
+      </details>
+      {% elif auth_user_type == 'customer' %}
+      <details class="account-menu">
+        <summary class="template-user account-trigger"><i data-lucide="user"></i> {{ auth_user_name|default:'Khách hàng' }} <i data-lucide="chevron-down"></i></summary>
+        <div class="account-dropdown">
+          <a href="/cart"><i data-lucide="shopping-bag"></i> Giỏ hàng</a>
+          <a href="/my-orders"><i data-lucide="package"></i> Đơn hàng</a>
+          <a class="danger" href="/logout"><i data-lucide="log-out"></i> Đăng xuất</a>
+        </div>
+      </details>
+      {% else %}
+      <a class="template-user" href="/login/customer"><i data-lucide="user"></i> Đăng nhập</a>
+      {% endif %}
+    </div>
+  </header>
+
+  <main class="detail-wrap">
+    <nav class="breadcrumbs" aria-label="breadcrumb">
+      {% for crumb in breadcrumbs %}
+        {% if crumb.url %}
+        <a href="{{ crumb.url }}">{{ crumb.label }}</a>
+        <span>/</span>
+        {% else %}
+        <strong>{{ crumb.label }}</strong>
+        {% endif %}
+      {% endfor %}
+    </nav>
+
+    <a class="back-link" href="/products"><i data-lucide="arrow-left"></i> Quay lại danh sách</a>
+
+    {% if flash_message %}
+    <div class="flash-message {% if flash_type == 'success' %}success{% else %}error{% endif %}">
+      {% if flash_type == 'success' %}
+      <i data-lucide="check-circle"></i>
+      {% else %}
+      <i data-lucide="alert-circle"></i>
+      {% endif %}
+      <span>{{ flash_message }}</span>
+    </div>
+    {% endif %}
+
+    <section class="detail-card">
+      <div class="detail-media">
+        <img src="{{ product.image }}" alt="{{ product.name }}" />
+        {% if gallery_images %}
+        <div class="detail-gallery">
+          {% for image in gallery_images %}
+          <img src="{{ image }}" alt="{{ product.name }} gallery {{ forloop.counter }}" />
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="detail-info">
+        <p class="detail-type">{{ display_type|upper }} • {{ product.category }}</p>
+        <h1>{{ product.name }}</h1>
+        <p class="detail-brand">Thương hiệu: {{ product.brand }}</p>
+        <p class="detail-price">{{ product.price }}</p>
+        <p class="detail-stock">Tồn kho: {{ product.stock }} • Trạng thái: {{ product.status }}</p>
+        <p class="detail-desc">{{ product.description|default:'Chưa có mô tả chi tiết.' }}</p>
+
+        <form method="post" class="add-cart-form">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add_to_cart" />
+          <label for="quantity">Số lượng</label>
+          <input id="quantity" name="quantity" type="number" min="1" max="99" value="1" />
+          <button type="submit" class="btn btn-primary">Thêm vào giỏ</button>
+        </form>
+
+        <h3>Thông số kỹ thuật</h3>
+        <ul class="spec-list">
+          {% for key, value in product.specs.items %}
+          <li><span>{{ key }}</span><strong>{{ value }}</strong></li>
+          {% empty %}
+          <li><span>Thông tin</span><strong>Đang cập nhật</strong></li>
+          {% endfor %}
+        </ul>
+      </div>
+    </section>
+
+    <section class="detail-card" style="margin-top: 20px;">
+      <div class="detail-info" style="width: 100%;">
+        <h3>Đánh giá khách hàng</h3>
+        {% if reviews %}
+        <ul class="spec-list">
+          {% for review in reviews %}
+          <li class="review-item">
+            <div class="review-meta">
+              <strong class="review-author">{{ review.customer_name|default:'Khách hàng' }}</strong>
+              <span class="review-rating">★ {{ review.rating }}/5</span>
+            </div>
+            <p class="review-comment">{{ review.comment|default:'(Không có bình luận)' }}</p>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p style="color:#64748b;">Sản phẩm chưa có đánh giá nào.</p>
+        {% endif %}
+      </div>
+    </section>
+
+    <section class="advisor-section detail-advisor-section">
+      <div class="advisor-head">
+        <div>
+          <h2>AI advisor goi y them</h2>
+          <p>Gợi ý dựa trên sản phẩm đang xem và hành vi gần đây.</p>
+        </div>
+        {% if advisor_summary.buy_score %}
+        <span class="advisor-chip">Buy score: {{ advisor_summary.buy_score }}</span>
+        {% endif %}
+      </div>
+      <div class="product-grid advisor-grid">
+        {% for item in advisor_recommendations %}
+        <a class="product-link" href="{{ item.detail_url }}">
+          <article class="product-card advisor-card">
+            <div class="image-wrap">
+              <img src="{{ item.image }}" alt="{{ item.name }}" />
+            </div>
+            <div class="product-body">
+              <div class="meta">{{ item.brand }} • {{ item.product_type|upper }}</div>
+              <h3>{{ item.name }}</h3>
+              {% if item.confidence %}
+              <p class="advisor-chip">⭐ Matching: {{ item.confidence|floatformat:2 }}</p>
+              {% endif %}
+              <div class="price-line"><strong>{{ item.price }}</strong></div>
+              <p class="advisor-reason">Customers who liked this also viewed: {{ item.reason }}</p>
+              <span class="btn btn-ghost">Similar products</span>
+            </div>
+          </article>
+        </a>
+        {% empty %}
+        <p style="color:#64748b;">Chưa có gợi ý thêm cho sản phẩm này.</p>
+        {% endfor %}
+      </div>
+    </section>
+  </main>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    lucide.createIcons();
+
+    (function () {
+      const productType = "{{ product_type }}";
+      const productId = {{ product.id }};
+      const debugEnabled = "{{ advisor_debug_panel|yesno:'true,false' }}" === "true";
+      const quickActions = [
+        "Mau nao dang khuyen mai tot nhat?",
+        "So sanh 2 lua chon phu hop cho sinh vien",
+        "San pham nay co phu hop cho cong viec van phong khong?",
+      ];
+
+      const widget = document.createElement("div");
+      widget.className = "advisor-chat-widget";
+      widget.innerHTML = `
+        <button type="button" class="advisor-chat-toggle">AI Advisor Chat</button>
+        <div class="advisor-chat-panel hidden">
+          <div class="advisor-chat-head">
+            <div class="advisor-chat-head-main">
+              <p class="advisor-chat-title">Tro ly mua sam AI</p>
+              <p class="advisor-chat-subtitle">Tu van theo san pham ban dang xem</p>
+            </div>
+            <button type="button" class="advisor-chat-expand" aria-pressed="false">Toan man hinh</button>
+          </div>
+          <div class="advisor-chat-status">Trang thai: san sang</div>
+          <div class="advisor-chat-quick-actions"></div>
+          <div class="advisor-chat-messages"></div>
+          <form class="advisor-chat-form">
+            <input name="message" type="text" placeholder="Hoi ve san pham dang xem..." />
+            <button type="submit">Gui</button>
+          </form>
+          <div class="advisor-chat-debug hidden"></div>
+        </div>
+      `;
+      document.body.appendChild(widget);
+
+      const toggle = widget.querySelector(".advisor-chat-toggle");
+      const panel = widget.querySelector(".advisor-chat-panel");
+      const statusLine = widget.querySelector(".advisor-chat-status");
+      const quickActionsWrap = widget.querySelector(".advisor-chat-quick-actions");
+      const messages = widget.querySelector(".advisor-chat-messages");
+      const form = widget.querySelector(".advisor-chat-form");
+      const debugPanel = widget.querySelector(".advisor-chat-debug");
+      const expandBtn = widget.querySelector(".advisor-chat-expand");
+      let opened = false;
+      let isFullscreen = false;
+
+      function formatTime(date) {
+        return date.toLocaleTimeString("vi-VN", {hour: "2-digit", minute: "2-digit"});
+      }
+
+      function scrollToBottom() {
+        messages.scrollTop = messages.scrollHeight;
+      }
+
+      function setStatus(text, mode) {
+        statusLine.textContent = `Trang thai: ${text}`;
+        statusLine.dataset.mode = mode || "ready";
+      }
+
+      function appendMessage(role, text, timestampText) {
+        const line = document.createElement("div");
+        line.className = `advisor-chat-line ${role}`;
+
+        const avatar = document.createElement("span");
+        avatar.className = "advisor-chat-avatar";
+        avatar.textContent = role === "user" ? "YOU" : "AI";
+
+        const wrap = document.createElement("div");
+        wrap.className = "advisor-chat-bubble-wrap";
+
+        const bubble = document.createElement("div");
+        bubble.className = "advisor-chat-bubble";
+        bubble.textContent = text;
+
+        const time = document.createElement("span");
+        time.className = "advisor-chat-time";
+        time.textContent = timestampText || formatTime(new Date());
+
+        wrap.appendChild(bubble);
+        wrap.appendChild(time);
+        line.appendChild(avatar);
+        line.appendChild(wrap);
+        messages.appendChild(line);
+        scrollToBottom();
+        return line;
+      }
+
+      function showTypingIndicator() {
+        const line = document.createElement("div");
+        line.className = "advisor-chat-line bot typing";
+
+        const avatar = document.createElement("span");
+        avatar.className = "advisor-chat-avatar";
+        avatar.textContent = "AI";
+
+        const wrap = document.createElement("div");
+        wrap.className = "advisor-chat-bubble-wrap";
+
+        const bubble = document.createElement("div");
+        bubble.className = "advisor-chat-bubble";
+        bubble.textContent = "Dang soan";
+
+        const dots = document.createElement("span");
+        dots.className = "advisor-typing-dots";
+        dots.innerHTML = "<span></span><span></span><span></span>";
+        bubble.appendChild(dots);
+
+        const time = document.createElement("span");
+        time.className = "advisor-chat-time";
+        time.textContent = formatTime(new Date());
+
+        wrap.appendChild(bubble);
+        wrap.appendChild(time);
+        line.appendChild(avatar);
+        line.appendChild(wrap);
+        messages.appendChild(line);
+        scrollToBottom();
+        return line;
+      }
+
+      function appendSources(sources) {
+        if (!Array.isArray(sources) || !sources.length) {
+          return;
+        }
+        const box = document.createElement("div");
+        box.className = "advisor-chat-sources";
+        const title = document.createElement("strong");
+        title.textContent = "Nguon tham chieu:";
+        box.appendChild(title);
+
+        const list = document.createElement("ul");
+        list.className = "advisor-chat-source-list";
+        sources.slice(0, 4).forEach(function (src) {
+          const item = document.createElement("li");
+          item.textContent = `${src.source || "kb"} - ${src.title || "Tai lieu"}`;
+          list.appendChild(item);
+        });
+        box.appendChild(list);
+        messages.appendChild(box);
+        scrollToBottom();
+      }
+
+      function renderDebug(payload) {
+        if (!debugEnabled) {
+          return;
+        }
+        debugPanel.classList.remove("hidden");
+        const rag = payload.rag || {};
+        const metrics = payload.metrics || {};
+        debugPanel.textContent = [
+          `ai_status=${payload.ai_status || "unknown"}`,
+          `used_cloud=${payload.used_cloud_model ? "true" : "false"}`,
+          `retrieval_mode=${rag.retrieval_mode || "n/a"}`,
+          `context_count=${rag.context_count || 0}`,
+          `retrieval_ms=${metrics.retrieval_ms || 0}`,
+          `generation_ms=${metrics.generation_ms || 0}`,
+          `total_ms=${metrics.total_ms || 0}`,
+        ].join(" | ");
+      }
+
+      function setFullscreen(nextState) {
+        isFullscreen = nextState;
+        widget.classList.toggle("is-fullscreen", isFullscreen);
+        expandBtn.setAttribute("aria-pressed", isFullscreen ? "true" : "false");
+        expandBtn.textContent = isFullscreen ? "Thu nho" : "Toan man hinh";
+        if (isFullscreen) {
+          panel.classList.remove("hidden");
+        }
+        scrollToBottom();
+      }
+
+      expandBtn.addEventListener("click", function () {
+        setFullscreen(!isFullscreen);
+      });
+
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape" && isFullscreen) {
+          setFullscreen(false);
+        }
+      });
+
+      quickActions.forEach(function (actionText) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "advisor-quick-action-btn";
+        btn.textContent = actionText;
+        btn.addEventListener("click", function () {
+          const input = form.querySelector("input[name='message']");
+          input.value = actionText;
+          form.dispatchEvent(new Event("submit"));
+        });
+        quickActionsWrap.appendChild(btn);
+      });
+
+      toggle.addEventListener("click", async function () {
+        panel.classList.toggle("hidden");
+        if (!opened) {
+          opened = true;
+          await fetch("/advisor/event", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({event_type: "chat_open", product_type: productType, product_id: productId, metadata: {page: "product_detail"}}),
+          });
+        }
+      });
+
+      form.addEventListener("submit", async function (event) {
+        event.preventDefault();
+        const input = form.querySelector("input[name='message']");
+        const message = input.value.trim();
+        if (!message) {
+          return;
+        }
+
+        appendMessage("user", message);
+        input.value = "";
+        setStatus("dang tao cau tra loi...", "generating");
+        const typingLine = showTypingIndicator();
+
+        try {
+          const response = await fetch("/advisor/chat", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({message: message, language: "vi", product_type: productType, product_id: productId}),
+          });
+          const payload = await response.json();
+          const answer = payload.answer || payload.error || "Khong co phan hoi tu AI advisor.";
+          typingLine.remove();
+          appendMessage("bot", answer);
+          appendSources(payload.sources || payload.context_documents || []);
+          renderDebug(payload);
+
+          const stateMap = {
+            generated: "cloud model",
+            fallback: "fallback noi bo",
+            no_evidence: "thieu bang chung",
+            blocked: "bi chan boi guardrails",
+          };
+          setStatus(stateMap[payload.ai_status] || "san sang", payload.ai_status || "ready");
+        } catch (error) {
+          typingLine.remove();
+          appendMessage("bot", "Khong the ket noi AI advisor luc nay. Vui long thu lai.");
+          setStatus("loi ket noi", "error");
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

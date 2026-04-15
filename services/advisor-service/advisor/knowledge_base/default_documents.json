@@ -1,0 +1,748 @@
+[
+    {
+        "title": "Chinh sach doi tra",
+        "language": "vi",
+        "source": "policy:return:vi",
+        "category": "policy",
+        "content": "Khach hang co the yeu cau doi tra trong thoi gian cho phep neu san pham bi loi, giao sai model, sai mau sac hoac khong dung nhu mo ta. Can giu hoa don, hop san pham va phu kien di kem de doi tra duoc xu ly nhanh hon.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "after_sales",
+            "intent": "return_policy"
+        }
+    },
+    {
+        "title": "Return policy",
+        "language": "en",
+        "source": "policy:return:en",
+        "category": "policy",
+        "content": "Customers may request a return within the allowed period when the product is defective, shipped incorrectly, or materially different from the description. Invoices, original packaging, and included accessories help speed up the return review.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "after_sales",
+            "intent": "return_policy"
+        }
+    },
+    {
+        "title": "Chinh sach giao hang",
+        "language": "vi",
+        "source": "policy:shipping:vi",
+        "category": "policy",
+        "content": "Don hang duoc xac nhan truoc khi dong goi va giao den khach. Thoi gian giao phu thuoc ton kho, khu vuc nhan hang va don vi van chuyen. Khach hang can cung cap dung so dien thoai va dia chi de tranh giao that bai.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "delivery",
+            "intent": "shipping_policy"
+        }
+    },
+    {
+        "title": "Shipping policy",
+        "language": "en",
+        "source": "policy:shipping:en",
+        "category": "policy",
+        "content": "Orders are processed after confirmation and packed based on stock availability. Delivery time depends on warehouse stock, shipping destination, and carrier capacity. Customers should provide a valid phone number and accurate address.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "delivery",
+            "intent": "shipping_policy"
+        }
+    },
+    {
+        "title": "Chinh sach bao hanh",
+        "language": "vi",
+        "source": "policy:warranty:vi",
+        "category": "policy",
+        "content": "Bao hanh phu thuoc vao tung nhom san pham va nha cung cap. Khach hang nen giu hoa don, phieu bao hanh va thuc hien dung huong dan su dung. Loi do nha san xuat thuong duoc uu tien tiep nhan va kiem tra truoc khi sua hoac doi.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "after_sales",
+            "intent": "warranty_policy"
+        }
+    },
+    {
+        "title": "Warranty support",
+        "language": "en",
+        "source": "policy:warranty:en",
+        "category": "policy",
+        "content": "Warranty support depends on product category and vendor conditions. Customers should keep invoices and warranty records. Manufacturing defects are typically inspected first before repair, replacement, or escalation is approved.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "after_sales",
+            "intent": "warranty_policy"
+        }
+    },
+    {
+        "title": "Huong dan thanh toan",
+        "language": "vi",
+        "source": "policy:payment:vi",
+        "category": "policy",
+        "content": "He thong co the ho tro thanh toan khi nhan hang, chuyen khoan hoac thanh toan truc tuyen tuy theo cau hinh cua cua hang. Don hang chi duoc xac nhan khi thong tin thanh toan hop le va phu hop voi gia tri don hang.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "checkout",
+            "intent": "payment_options"
+        }
+    },
+    {
+        "title": "Payment options",
+        "language": "en",
+        "source": "policy:payment:en",
+        "category": "policy",
+        "content": "The store may support cash on delivery, bank transfer, or online payment depending on configuration. Orders are confirmed only when payment information is valid and consistent with the order amount and fraud checks.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "checkout",
+            "intent": "payment_options"
+        }
+    },
+    {
+        "title": "Huy don va hoan tien",
+        "language": "vi",
+        "source": "policy:cancel_refund:vi",
+        "category": "policy",
+        "content": "Khach hang co the huy don truoc khi don duoc dong goi hoac giao cho don vi van chuyen. Neu da thanh toan truoc, he thong can doi soat thanh toan va thuc hien hoan tien theo quy trinh cua cua hang trong thoi gian cam ket.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "order_change",
+            "intent": "cancel_refund"
+        }
+    },
+    {
+        "title": "Order cancellation and refund",
+        "language": "en",
+        "source": "policy:cancel_refund:en",
+        "category": "policy",
+        "content": "Customers can usually cancel an order before packing or carrier handoff. If payment was captured in advance, the store should reconcile the transaction and process the refund within the committed refund window.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "order_change",
+            "intent": "cancel_refund"
+        }
+    },
+    {
+        "title": "Kiem tra hang khi nhan",
+        "language": "vi",
+        "source": "policy:inspection:vi",
+        "category": "policy",
+        "content": "Khi nhan hang, khach hang nen kiem tra ngoai quan hop, tinh trang niem phong va doi chieu san pham voi don dat. Neu co dau hieu vo hop, mo sai model hoac thieu phu kien, nen ghi nhan ngay va lien he ho tro.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "delivery",
+            "intent": "package_inspection"
+        }
+    },
+    {
+        "title": "Package inspection on delivery",
+        "language": "en",
+        "source": "policy:inspection:en",
+        "category": "policy",
+        "content": "When receiving a package, customers should inspect the outer box, security seals, and included accessories against the order record. If the package looks damaged, opened, or incomplete, support should be contacted immediately.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "delivery",
+            "intent": "package_inspection"
+        }
+    },
+    {
+        "title": "Xu ly san pham loi",
+        "language": "vi",
+        "source": "policy:defect:vi",
+        "category": "policy",
+        "content": "Neu san pham loi ngay khi mo hop hoac loi trong qua trinh su dung som, bo phan ho tro can thu thap mo ta loi, hinh anh, video neu can, va thong tin don hang. Sau do san pham se duoc phan loai theo truong hop doi moi, bao hanh hoac hoan tien.",
+        "metadata": {
+            "audience": "staff",
+            "role": "support_staff",
+            "scenario": "after_sales",
+            "intent": "defect_handling"
+        }
+    },
+    {
+        "title": "Defective product handling",
+        "language": "en",
+        "source": "policy:defect:en",
+        "category": "policy",
+        "content": "If a product is defective on arrival or fails shortly after delivery, support staff should collect issue details, photos or videos when needed, and the order reference. The case is then classified for replacement, warranty processing, or refund.",
+        "metadata": {
+            "audience": "staff",
+            "role": "support_staff",
+            "scenario": "after_sales",
+            "intent": "defect_handling"
+        }
+    },
+    {
+        "title": "Huong dan chon laptop van phong",
+        "language": "vi",
+        "source": "guide:laptop_office:vi",
+        "category": "computer",
+        "content": "Laptop van phong nen uu tien CPU on dinh, RAM toi thieu 16GB neu mo nhieu tab va ung dung, SSD de may khoi dong nhanh, va man hinh de nhin cho lam viec lau. Neu di chuyen nhieu, trong luong nhe va pin on dinh la yeu to quan trong.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "product_selection",
+            "intent": "office_laptop"
+        }
+    },
+    {
+        "title": "Office laptop buying guide",
+        "language": "en",
+        "source": "guide:laptop_office:en",
+        "category": "computer",
+        "content": "Office laptops should prioritize stable CPU performance, at least 16GB RAM for multitasking, SSD storage for responsiveness, and a comfortable display for long sessions. Lightweight chassis and reliable battery life matter for mobile work.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "product_selection",
+            "intent": "office_laptop"
+        }
+    },
+    {
+        "title": "Huong dan chon laptop gaming",
+        "language": "vi",
+        "source": "guide:laptop_gaming:vi",
+        "category": "computer",
+        "content": "Laptop gaming thuong nen uu tien GPU truoc, sau do moi can bang CPU, RAM, tan nhiet va man hinh tan so quet cao. Neu choi game nang hoac dung phan mem do hoa, nen xem ky cong suat GPU, kha nang thoat nhiet va kha nang nang cap RAM, SSD.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "product_selection",
+            "intent": "gaming_laptop"
+        }
+    },
+    {
+        "title": "Gaming laptop buying guide",
+        "language": "en",
+        "source": "guide:laptop_gaming:en",
+        "category": "computer",
+        "content": "Gaming laptops should usually prioritize GPU capability first, then balance CPU, RAM, thermals, and high refresh displays. For heavy gaming or creative workloads, GPU power limits, cooling quality, and upgrade options for RAM and SSD are important.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "product_selection",
+            "intent": "gaming_laptop"
+        }
+    },
+    {
+        "title": "Tieu chi so sanh CPU RAM SSD",
+        "language": "vi",
+        "source": "guide:computer_specs:vi",
+        "category": "computer",
+        "content": "CPU anh huong den toc do xu ly tong the, RAM anh huong kha nang da nhiem, con SSD tac dong den toc do khoi dong va mo ung dung. Neu ngan sach co han, may dung SSD va du RAM thuong cho trai nghiem muot hon may co CPU manh nhung thieu RAM hoac dung o cung cham.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "comparison",
+            "intent": "compare_cpu_ram_ssd"
+        }
+    },
+    {
+        "title": "How to compare CPU RAM and SSD",
+        "language": "en",
+        "source": "guide:computer_specs:en",
+        "category": "computer",
+        "content": "CPU affects overall compute performance, RAM affects multitasking capacity, and SSD affects startup and application responsiveness. On a tight budget, a laptop with SSD storage and enough RAM often feels smoother than one with a stronger CPU but slow storage or insufficient memory.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "comparison",
+            "intent": "compare_cpu_ram_ssd"
+        }
+    },
+    {
+        "title": "Huong dan chon dien thoai chup anh",
+        "language": "vi",
+        "source": "guide:phone_camera:vi",
+        "category": "mobile",
+        "content": "Dien thoai chup anh dep can can bang cam bien, xu ly hinh anh, ong kinh phu va chat luong quay video. Nguoi dung chup chan dung, chup dem hay quay short video nen uu tien he thong camera on dinh va phan mem xu ly tot hon la chi nhin vao so cham megapixel.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "product_selection",
+            "intent": "camera_phone"
+        }
+    },
+    {
+        "title": "Camera phone buying guide",
+        "language": "en",
+        "source": "guide:phone_camera:en",
+        "category": "mobile",
+        "content": "A good camera phone balances sensor quality, image processing, extra lenses, and video stability. Users who care about portraits, night shots, or short-form video should prioritize consistent camera systems and software tuning, not only megapixel count.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "product_selection",
+            "intent": "camera_phone"
+        }
+    },
+    {
+        "title": "Huong dan chon dien thoai pin trau",
+        "language": "vi",
+        "source": "guide:phone_battery:vi",
+        "category": "mobile",
+        "content": "Dien thoai pin trau khong chi phu thuoc vao dung luong pin ma con lien quan den chip, man hinh, tan so quet va toi uu phan mem. Nguoi dung di chuyen nhieu nen uu tien may co pin tot, sac nhanh hop ly va khong qua nong khi su dung lien tuc.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "product_selection",
+            "intent": "battery_phone"
+        }
+    },
+    {
+        "title": "Battery phone buying guide",
+        "language": "en",
+        "source": "guide:phone_battery:en",
+        "category": "mobile",
+        "content": "Long battery life depends not only on battery capacity but also on chipset efficiency, display type, refresh rate, and software optimization. Heavy travelers should favor reliable endurance and practical fast charging over raw capacity numbers alone.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "product_selection",
+            "intent": "battery_phone"
+        }
+    },
+    {
+        "title": "FAQ laptop van phong nen co gi",
+        "language": "vi",
+        "source": "faq:laptop_office:vi",
+        "category": "faq",
+        "content": "Hoi: Laptop van phong can cau hinh gi? Tra loi: Thuong nen co CPU tam trung on dinh, RAM 16GB neu lam viec da nhiem, SSD, webcam on va man hinh de nhin cho hoc tap, hop online va soan thao.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "faq",
+            "intent": "office_laptop"
+        }
+    },
+    {
+        "title": "FAQ what makes a good office laptop",
+        "language": "en",
+        "source": "faq:laptop_office:en",
+        "category": "faq",
+        "content": "Question: What should an office laptop include? Answer: A balanced mid-range CPU, 16GB RAM for multitasking, SSD storage, dependable webcam, and a comfortable display are strong basics for study, remote work, and office tasks.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "faq",
+            "intent": "office_laptop"
+        }
+    },
+    {
+        "title": "FAQ dien thoai chup anh nen uu tien gi",
+        "language": "vi",
+        "source": "faq:camera_phone:vi",
+        "category": "faq",
+        "content": "Hoi: Dien thoai chup anh nen uu tien gi? Tra loi: Nen uu tien chat luong xu ly anh, kha nang chup dem, quay video va do on dinh cua camera hon la chi so megapixel.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "faq",
+            "intent": "camera_phone"
+        }
+    },
+    {
+        "title": "FAQ what matters in a camera phone",
+        "language": "en",
+        "source": "faq:camera_phone:en",
+        "category": "faq",
+        "content": "Question: What matters most in a camera phone? Answer: Image processing quality, low-light performance, video output, and camera consistency matter more than megapixel numbers alone.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "faq",
+            "intent": "camera_phone"
+        }
+    },
+    {
+        "title": "FAQ staff tiep nhan yeu cau bao hanh",
+        "language": "vi",
+        "source": "faq:staff_warranty:vi",
+        "category": "faq",
+        "content": "Hoi: Staff can lam gi khi khach bao san pham loi? Tra loi: Xac nhan don hang, ghi nhan model, serial neu co, mo ta loi, bang chung hinh anh va huong xu ly doi, bao hanh hoac chuyen nha cung cap.",
+        "metadata": {
+            "audience": "staff",
+            "role": "support_staff",
+            "scenario": "faq",
+            "intent": "warranty_intake"
+        }
+    },
+    {
+        "title": "FAQ staff warranty intake",
+        "language": "en",
+        "source": "faq:staff_warranty:en",
+        "category": "faq",
+        "content": "Question: What should staff collect for a warranty request? Answer: The order reference, product model, serial number when available, issue description, evidence such as photos, and the recommended handling path for replacement or repair.",
+        "metadata": {
+            "audience": "staff",
+            "role": "support_staff",
+            "scenario": "faq",
+            "intent": "warranty_intake"
+        }
+    },
+    {
+        "title": "iPhone 15 phu hop voi ai",
+        "language": "vi",
+        "source": "catalog_guide:iphone15:vi",
+        "category": "mobile",
+        "content": "iPhone 15 phu hop voi nguoi muon mot dien thoai cao cap de dung lau dai, hieu nang manh, camera on dinh va he sinh thai Apple dong bo. Day la lua chon hop voi nguoi uu tien trai nghiem can bang giua chup anh, video, su dung hang ngay va do on dinh phan mem.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "catalog_advice",
+            "intent": "iphone15_fit"
+        }
+    },
+    {
+        "title": "Who should buy iPhone 15",
+        "language": "en",
+        "source": "catalog_guide:iphone15:en",
+        "category": "mobile",
+        "content": "iPhone 15 fits users who want a premium phone with strong performance, dependable cameras, long software support, and tight Apple ecosystem integration. It is a balanced option for everyday use, photos, video, and long-term ownership.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "catalog_advice",
+            "intent": "iphone15_fit"
+        }
+    },
+    {
+        "title": "iPhone 15 Pro Max phu hop voi ai",
+        "language": "vi",
+        "source": "catalog_guide:iphone15promax:vi",
+        "category": "mobile",
+        "content": "iPhone 15 Pro Max phu hop voi nguoi can camera linh hoat hon, quay video tot, man hinh lon va hieu nang manh cho cong viec sang tao noi dung. Neu uu tien trai nghiem flagship rat cao cap va pin tot, day la nhom san pham nen can nhac.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "catalog_advice",
+            "intent": "iphone15promax_fit"
+        }
+    },
+    {
+        "title": "Who should buy iPhone 15 Pro Max",
+        "language": "en",
+        "source": "catalog_guide:iphone15promax:en",
+        "category": "mobile",
+        "content": "iPhone 15 Pro Max is suitable for users who want a larger display, stronger video and camera flexibility, and flagship-level performance for content creation. It is a strong match for premium buyers who value both battery life and top-tier Apple features.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "catalog_advice",
+            "intent": "iphone15promax_fit"
+        }
+    },
+    {
+        "title": "Laptop gaming nen uu tien GPU",
+        "language": "vi",
+        "source": "catalog_guide:gaming_gpu:vi",
+        "category": "computer",
+        "content": "Trong nhieu truong hop gaming, GPU anh huong manh den FPS va chat luong do hoa hon CPU. Vi vay khi hai may co gia gan nhau, laptop co GPU manh hon va he thong tan nhiet tot thuong hop ly hon cho nguoi choi game nang.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "catalog_advice",
+            "intent": "gaming_gpu_priority"
+        }
+    },
+    {
+        "title": "Gaming laptops should prioritize GPU",
+        "language": "en",
+        "source": "catalog_guide:gaming_gpu:en",
+        "category": "computer",
+        "content": "For many gaming workloads, GPU power affects frame rate and visual quality more directly than CPU. When two laptops are close in price, the one with the stronger GPU and better thermal design is often the better gaming choice.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "catalog_advice",
+            "intent": "gaming_gpu_priority"
+        }
+    },
+    {
+        "title": "Quy trinh staff cap nhat ton kho",
+        "language": "vi",
+        "source": "staff:inventory_update:vi",
+        "category": "operations",
+        "content": "Khi staff nhap hang hoac cap nhat san pham, can doi chieu model, SKU, so luong, gia va thong tin ky thuat truoc khi luu. Neu thay doi ton kho, gia hoac mo ta, he thong nen cap nhat nhat quan de tranh hien thi sai tren trang ban hang.",
+        "metadata": {
+            "audience": "staff",
+            "role": "inventory_staff",
+            "scenario": "inventory_management",
+            "intent": "update_stock"
+        }
+    },
+    {
+        "title": "Staff inventory update workflow",
+        "language": "en",
+        "source": "staff:inventory_update:en",
+        "category": "operations",
+        "content": "When staff receive inventory or update products, they should validate the model, SKU, quantity, price, and technical attributes before saving. Stock, price, and description changes should remain consistent to avoid incorrect storefront information.",
+        "metadata": {
+            "audience": "staff",
+            "role": "inventory_staff",
+            "scenario": "inventory_management",
+            "intent": "update_stock"
+        }
+    },
+    {
+        "title": "Template thong so laptop/computer",
+        "language": "vi",
+        "source": "template:computer_specs:vi",
+        "category": "computer",
+        "content": "Mau thong so de tu van may tinh gom CPU, RAM, dung luong SSD, kich thuoc man hinh, cong ket noi, trong luong, dung luong pin, va che do bao hanh. Khi gap loi nong may, tiem nang cao do tan nhiet kem hoac bua goc hut gio bi che, can ve sinh va cap nhat trinh dieu khien.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "product_selection",
+            "intent": "computer_specs_template",
+            "tags": [
+                "laptop",
+                "specs",
+                "troubleshooting"
+            ],
+            "priority": 1.4,
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31"
+        }
+    },
+    {
+        "title": "Template thong so dien thoai/mobile",
+        "language": "vi",
+        "source": "template:mobile_specs:vi",
+        "category": "mobile",
+        "content": "Mau thong so dien thoai gom chip, RAM, bo nho, man hinh, camera, pin, sac nhanh va ket noi 5G. Su co thuong gap la hao pin nhanh hoac nong may khi choi game, nen kiem tra ung dung chay nen, tan so quet va cap nhat phan mem.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "product_selection",
+            "intent": "mobile_specs_template",
+            "tags": [
+                "phone",
+                "specs",
+                "battery"
+            ],
+            "priority": 1.4,
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31"
+        }
+    },
+    {
+        "title": "FAQ thoi trang/clothes can luu y",
+        "language": "vi",
+        "source": "faq:clothes_selection:vi",
+        "category": "clothes",
+        "content": "Khi chon quan ao nen uu tien chat lieu, form dang, kich thuoc va muc dich su dung. Van de thuong gap la sai size hoac xuong mau sau khi giat, can doi chieu bang size va huong dan bao quan truoc khi mua.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "product_selection",
+            "intent": "clothes_faq",
+            "tags": [
+                "size",
+                "material",
+                "care"
+            ],
+            "priority": 1.2,
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31"
+        }
+    },
+    {
+        "title": "Huong dan chon may tinh bang/tablet",
+        "language": "vi",
+        "source": "guide:tablet_selection:vi",
+        "category": "tablet",
+        "content": "Tablet phu hop hoc tap va giai tri can can bang man hinh, pin, hieu nang va but cam ung neu can ghi chu. Loi thuong gap la tre may khi mo nhieu ung dung, nen uu tien RAM cao hon va dung luong bo nho phu hop.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "product_selection",
+            "intent": "tablet_guide",
+            "tags": [
+                "tablet",
+                "education",
+                "multitask"
+            ],
+            "priority": 1.3,
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31"
+        }
+    },
+    {
+        "title": "FAQ tai nghe/audio",
+        "language": "vi",
+        "source": "faq:audio_selection:vi",
+        "category": "audio",
+        "content": "Tai nghe nen chon theo nhu cau nghe nhac, hoc online hay choi game, chu y den do tre, chat am va do em. Van de pho bien la ket noi bluetooth chap chon hoac micro yeu, can kiem tra codec va cap nhat firmware.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "product_selection",
+            "intent": "audio_faq",
+            "tags": [
+                "earbuds",
+                "headphone",
+                "bluetooth"
+            ],
+            "priority": 1.3,
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31"
+        }
+    },
+    {
+        "title": "Huong dan chon dong ho thong minh/wearable",
+        "language": "vi",
+        "source": "guide:wearable_selection:vi",
+        "category": "wearable",
+        "content": "Dong ho thong minh can tuong thich he dieu hanh dien thoai, do chinh xac cam bien suc khoe va thoi luong pin. Su co thuong thay la thong bao cham hoac mat ket noi, can kiem tra quyen ung dung va dong bo lai.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "product_selection",
+            "intent": "wearable_guide",
+            "tags": [
+                "smartwatch",
+                "health",
+                "sync"
+            ],
+            "priority": 1.2,
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31"
+        }
+    },
+    {
+        "title": "Template linh kien/component",
+        "language": "vi",
+        "source": "template:component_specs:vi",
+        "category": "component",
+        "content": "Linh kien PC can kiem tra tuong thich socket CPU, chuan RAM, cong suat PSU va kich thuoc case. Loi thuong gap la khong boot do khong tuong thich bo nho hoac cap nguon thieu cong suat.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "compatibility_check",
+            "intent": "component_template",
+            "tags": [
+                "cpu",
+                "mainboard",
+                "psu"
+            ],
+            "priority": 1.5,
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31"
+        }
+    },
+    {
+        "title": "FAQ thiet bi ngoai vi/peripheral",
+        "language": "vi",
+        "source": "faq:peripheral_selection:vi",
+        "category": "peripheral",
+        "content": "Ban phim, chuot va webcam nen chon theo muc dich lam viec hoac choi game, uu tien do ben va do on dinh ket noi. Van de thuong gap la driver khong nhan hoac do tre cao, can doi cong USB va cap nhat driver.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "product_selection",
+            "intent": "peripheral_faq",
+            "tags": [
+                "keyboard",
+                "mouse",
+                "webcam"
+            ],
+            "priority": 1.2,
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31"
+        }
+    },
+    {
+        "title": "Huong dan chon man hinh/monitor",
+        "language": "vi",
+        "source": "guide:monitor_selection:vi",
+        "category": "monitor",
+        "content": "Man hinh nen can doi kich thuoc, do phan giai, tan so quet va loai tam nen theo nhu cau. Loi pho bien la nhap nhay hoac sai mau, can kiem tra day cap, profile mau va tan so quet trong he thong.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "product_selection",
+            "intent": "monitor_guide",
+            "tags": [
+                "display",
+                "refresh_rate",
+                "color"
+            ],
+            "priority": 1.3,
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31"
+        }
+    },
+    {
+        "title": "FAQ phu kien/accessory",
+        "language": "vi",
+        "source": "faq:accessory_selection:vi",
+        "category": "accessory",
+        "content": "Phu kien nhu op lung, bao da, gia do nen chon theo dung model va muc dich bao ve. Van de thuong gap la khong vua may hoac che camera, nen doi chieu model va nam san xuat truoc khi dat hang.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "product_selection",
+            "intent": "accessory_faq",
+            "tags": [
+                "case",
+                "cover",
+                "fit"
+            ],
+            "priority": 1.2,
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31"
+        }
+    },
+    {
+        "title": "Huong dan bo sac va pin du phong/charging",
+        "language": "vi",
+        "source": "guide:charging_selection:vi",
+        "category": "charging",
+        "content": "Bo sac va pin du phong can dung chuan cong suat va giao thuc sac cua thiet bi de tranh nong may. Su co pho bien la sac cham do day kem chat luong hoac cong suat khong du, nen uu tien san pham co chung nhan an toan.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "product_selection",
+            "intent": "charging_guide",
+            "tags": [
+                "charger",
+                "powerbank",
+                "fast_charge"
+            ],
+            "priority": 1.4,
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31"
+        }
+    },
+    {
+        "title": "FAQ sach/book cong nghe",
+        "language": "vi",
+        "source": "faq:book_selection:vi",
+        "category": "book",
+        "content": "Sach cong nghe nen chon theo trinh do nen tang va muc tieu hoc tap, uu tien sach co vi du thuc hanh va cap nhat gan day. Van de thuong gap la mua nham sach qua nang, nen bat dau tu lo trinh co ban den nang cao.",
+        "metadata": {
+            "audience": "customer",
+            "role": "buyer",
+            "scenario": "product_selection",
+            "intent": "book_faq",
+            "tags": [
+                "book",
+                "learning_path",
+                "beginner"
+            ],
+            "priority": 1.1,
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31"
+        }
+    }
+]

@@ -1,0 +1,48 @@
+{
+  "generated_at": "2026-04-06T15:50:32.551222+00:00",
+  "base_url": "http://localhost:8000",
+  "phase": "phase-4-rag-v2-hardened",
+  "version": "v2.2",
+  "chat": {
+    "sample_size": 6,
+    "success_count": 6,
+    "failure_count": 0,
+    "latency_ms": {
+      "min": 315.13,
+      "avg": 485.98,
+      "p50": 386.69,
+      "p95": 780.97,
+      "max": 829.73
+    },
+    "fallback_rate": 1.0,
+    "retrieval_relevance_at_k": 1.0,
+    "grounded_answer_rate": 1.0,
+    "citation_rate": 1.0,
+    "hallucination_proxy_rate": 0.0,
+    "evidence_grounded_rate": 0.8333,
+    "source_precision": 0.8333,
+    "golden_set_size": 6,
+    "recommendation_limit": 6,
+    "failures": []
+  },
+  "recommendations": {
+    "sample_size": 4,
+    "success_count": 4,
+    "failure_count": 0,
+    "non_empty_result_rate": 1.0,
+    "latency_ms": {
+      "min": 12.76,
+      "avg": 20.13,
+      "p50": 18.31,
+      "p95": 29.35,
+      "max": 31.14
+    },
+    "failures": []
+  },
+  "notes": [
+    "fallback_rate > 0 means cloud model was not used for some requests",
+    "retrieval_relevance_at_k is measured by keyword hit in returned context_documents",
+    "evidence_grounded_rate uses golden-set expected_sources; source_precision is precision@expected",
+    "citation_rate/grounded_answer_rate are proxy metrics based on bracket presence"
+  ]
+}

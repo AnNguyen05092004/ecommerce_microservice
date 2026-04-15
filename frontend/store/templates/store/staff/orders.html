@@ -1,0 +1,143 @@
+{% extends "store/staff/base.html" %}
+
+{% block title %}Quản lý đơn hàng{% endblock %}
+
+{% block page_title %}Đơn hàng{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="{% url 'staff-dashboard' %}">Bảng điều khiển</a>
+    <span>/</span>
+    <span>Đơn hàng</span>
+</div>
+
+<div class="card">
+    <div class="card-title">
+        Danh sách đơn hàng ({{ orders|length }})
+    </div>
+
+    <form method="get" style="display:flex; gap:8px; align-items:end; margin-bottom:16px;">
+        <div class="form-group" style="margin:0; min-width: 220px;">
+            <label>Lọc trạng thái</label>
+            <select name="status">
+                <option value="" {% if not selected_status %}selected{% endif %}>Tất cả</option>
+                <option value="pending" {% if selected_status == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="confirmed" {% if selected_status == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                <option value="shipping" {% if selected_status == 'shipping' %}selected{% endif %}>Shipping</option>
+                <option value="completed" {% if selected_status == 'completed' %}selected{% endif %}>Completed</option>
+                <option value="cancelled" {% if selected_status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+            </select>
+        </div>
+        <button class="btn btn-secondary" type="submit"><i data-lucide="filter"></i> Lọc</button>
+    </form>
+    
+    {% if orders %}
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Khách hàng</th>
+                    <th>Ngày đặt</th>
+                    <th>Tổng tiền</th>
+                    <th>Số lượng</th>
+                    <th>Trạng thái</th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td><strong>#{{ order.id }}</strong></td>
+                    <td>
+                        {% if order.customer %}
+                            {{ order.customer.full_name|default:order.customer.username }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if order.created_at %}
+                            {{ order.created_at|date:"d/m/Y H:i" }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                    <td class="text-right">
+                        {% if order.total_amount %}
+                            {{ order.total_amount|floatformat:0 }}₫
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        {% if order.items %}
+                            {{ order.items|length }}
+                        {% else %}
+                            0
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if order.status == 'pending' %}
+                            <span class="badge badge-warning">Chờ xác nhận</span>
+                        {% elif order.status == 'confirmed' %}
+                            <span class="badge" style="background-color: #bfdbfe; color: #1e40af;">Đã xác nhận</span>
+                        {% elif order.status == 'shipping' %}
+                            <span class="badge" style="background-color: #c7d2fe; color: #3730a3;">Đang giao</span>
+                        {% elif order.status == 'completed' %}
+                            <span class="badge badge-success">Hoàn tất</span>
+                        {% elif order.status == 'cancelled' %}
+                            <span class="badge badge-danger">Hủy</span>
+                        {% else %}
+                            <span class="badge">{{ order.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display:flex; gap:6px; flex-wrap: wrap;">
+                            {% if order.status == 'pending' %}
+                            <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="update_status">
+                                <input type="hidden" name="order_id" value="{{ order.id }}">
+                                <input type="hidden" name="status" value="confirmed">
+                                <button class="btn btn-secondary btn-small" type="submit">Xác nhận</button>
+                            </form>
+                            <form method="post" onsubmit="return confirm('Hủy đơn này?');">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="update_status">
+                                <input type="hidden" name="order_id" value="{{ order.id }}">
+                                <input type="hidden" name="status" value="cancelled">
+                                <button class="btn btn-danger btn-small" type="submit">Hủy</button>
+                            </form>
+                            {% elif order.status == 'confirmed' %}
+                            <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="update_status">
+                                <input type="hidden" name="order_id" value="{{ order.id }}">
+                                <input type="hidden" name="status" value="shipping">
+                                <button class="btn btn-secondary btn-small" type="submit">Chuyển giao</button>
+                            </form>
+                            {% elif order.status == 'shipping' %}
+                            <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="update_status">
+                                <input type="hidden" name="order_id" value="{{ order.id }}">
+                                <input type="hidden" name="status" value="completed">
+                                <button class="btn btn-primary btn-small" type="submit">Hoàn tất</button>
+                            </form>
+                            {% else %}
+                            <span style="font-size: 12px; color: #64748b;">Không có thao tác</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+            <i data-lucide="package" style="width: 50px; height: 50px; margin: 0 auto 12px;"></i>
+            <p>Chưa có đơn hàng nào</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

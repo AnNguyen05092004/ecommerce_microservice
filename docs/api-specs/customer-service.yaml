@@ -1,0 +1,918 @@
+# ============================================
+# Customer Service — OpenAPI 3.0 Specification
+# ============================================
+openapi: 3.0.3
+info:
+  title: Customer Service API
+  description: |
+    Microservice quản lý khách hàng, giỏ hàng, đơn hàng, đánh giá sản phẩm.
+    Database: MySQL
+  version: 1.0.0
+
+servers:
+  - url: http://customer-service:8002
+    description: Docker internal
+  - url: http://localhost:8002
+    description: Local development
+
+tags:
+  - name: Auth
+    description: Xác thực khách hàng
+  - name: Customer
+    description: Quản lý thông tin khách hàng
+  - name: Cart
+    description: Giỏ hàng
+  - name: Order
+    description: Đơn hàng
+  - name: Review
+    description: Đánh giá sản phẩm
+  - name: Health
+    description: Health check
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  # ─── AUTH ───────────────────────────────────────────
+  /api/auth/register/:
+    post:
+      tags: [Auth]
+      summary: Đăng ký khách hàng mới
+      operationId: customerRegister
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerRegister'
+      responses:
+        '201':
+          description: Đăng ký thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/auth/login/:
+    post:
+      tags: [Auth]
+      summary: Đăng nhập khách hàng
+      operationId: customerLogin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Đăng nhập thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Sai thông tin đăng nhập
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/verify/:
+    post:
+      tags: [Auth]
+      summary: Xác thực JWT token (Gateway gọi)
+      operationId: verifyToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token:
+                  type: string
+      responses:
+        '200':
+          description: Token hợp lệ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenVerifyResponse'
+        '401':
+          description: Token không hợp lệ
+
+  # ─── CUSTOMER PROFILE ──────────────────────────────
+  /api/customers/me/:
+    get:
+      tags: [Customer]
+      summary: Xem thông tin cá nhân
+      operationId: getMyProfile
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Thông tin khách hàng
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    put:
+      tags: [Customer]
+      summary: Cập nhật thông tin cá nhân
+      operationId: updateMyProfile
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerUpdate'
+      responses:
+        '200':
+          description: Cập nhật thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/customers/:
+    get:
+      tags: [Customer]
+      summary: Danh sách khách hàng (Staff only)
+      operationId: listCustomers
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Tìm theo tên, email, phone
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Danh sách khách hàng
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerListResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/customers/{id}/:
+    get:
+      tags: [Customer]
+      summary: Chi tiết khách hàng (Staff only)
+      operationId: getCustomer
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Thông tin khách hàng
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ─── CART ───────────────────────────────────────────
+  /api/cart/:
+    get:
+      tags: [Cart]
+      summary: Xem giỏ hàng
+      operationId: getCart
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Giỏ hàng hiện tại
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+
+  /api/cart/items/:
+    post:
+      tags: [Cart]
+      summary: Thêm sản phẩm vào giỏ
+      operationId: addToCart
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CartItemCreate'
+      responses:
+        '201':
+          description: Đã thêm vào giỏ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartItem'
+        '400':
+          description: Sản phẩm không tồn tại hoặc hết hàng
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/cart/items/{id}/:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: CartItem ID
+
+    put:
+      tags: [Cart]
+      summary: Cập nhật số lượng trong giỏ
+      operationId: updateCartItem
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [quantity]
+              properties:
+                quantity:
+                  type: integer
+                  minimum: 1
+                  example: 2
+      responses:
+        '200':
+          description: Cập nhật thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartItem'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Cart]
+      summary: Xoá sản phẩm khỏi giỏ
+      operationId: removeCartItem
+      security:
+        - BearerAuth: []
+      responses:
+        '204':
+          description: Xoá thành công
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ─── ORDERS ─────────────────────────────────────────
+  /api/orders/:
+    get:
+      tags: [Order]
+      summary: Danh sách đơn hàng
+      description: |
+        - Customer: xem đơn hàng của mình
+        - Staff: xem tất cả đơn hàng
+      operationId: listOrders
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, confirmed, shipping, completed, cancelled]
+          description: Lọc theo trạng thái
+        - name: customer_id
+          in: query
+          schema:
+            type: integer
+          description: Lọc theo khách hàng (Staff only)
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Danh sách đơn hàng
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderListResponse'
+
+    post:
+      tags: [Order]
+      summary: Tạo đơn hàng mới (Checkout)
+      operationId: createOrder
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderCreate'
+      responses:
+        '201':
+          description: Đơn hàng đã tạo thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          description: Giỏ hàng trống hoặc sản phẩm hết hàng
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/orders/{id}/:
+    get:
+      tags: [Order]
+      summary: Chi tiết đơn hàng
+      operationId: getOrder
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Chi tiết đơn hàng
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/orders/{id}/status/:
+    patch:
+      tags: [Order]
+      summary: Cập nhật trạng thái đơn hàng (Staff only)
+      operationId: updateOrderStatus
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [confirmed, shipping, completed, cancelled]
+      responses:
+        '200':
+          description: Cập nhật trạng thái thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          description: Trạng thái không hợp lệ
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ─── REVIEWS ────────────────────────────────────────
+  /api/reviews/:
+    get:
+      tags: [Review]
+      summary: Danh sách đánh giá theo sản phẩm
+      operationId: listReviews
+      parameters:
+        - name: product_id
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: product_type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [computer, mobile]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Danh sách đánh giá
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewListResponse'
+
+    post:
+      tags: [Review]
+      summary: Tạo đánh giá sản phẩm (Customer only)
+      operationId: createReview
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewCreate'
+      responses:
+        '201':
+          description: Đánh giá đã tạo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+        '400':
+          description: Đã đánh giá sản phẩm này hoặc chưa mua
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    Unauthorized:
+      description: Chưa xác thực
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Không có quyền
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    BadRequest:
+      description: Dữ liệu không hợp lệ
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Không tìm thấy
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        detail:
+          type: string
+
+    # ─── Auth Schemas ─────────────────────────────────
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          example: customer01
+        password:
+          type: string
+          format: password
+
+    CustomerRegister:
+      type: object
+      required: [username, password, full_name, email]
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 150
+          example: customer01
+        password:
+          type: string
+          format: password
+          minLength: 8
+        full_name:
+          type: string
+          maxLength: 255
+          example: "Trần Văn B"
+        email:
+          type: string
+          format: email
+          example: customer@email.com
+        phone:
+          type: string
+          maxLength: 20
+          example: "0912345678"
+        address:
+          type: string
+          example: "123 Nguyễn Trãi, Hà Nội"
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIs..."
+        user:
+          type: object
+          properties:
+            id:
+              type: integer
+            username:
+              type: string
+            full_name:
+              type: string
+
+    TokenVerifyResponse:
+      type: object
+      properties:
+        valid:
+          type: boolean
+          example: true
+        user_id:
+          type: integer
+        username:
+          type: string
+        user_type:
+          type: string
+          example: customer
+
+    # ─── Customer Schemas ─────────────────────────────
+    Customer:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        username:
+          type: string
+          example: customer01
+        full_name:
+          type: string
+          example: "Trần Văn B"
+        email:
+          type: string
+          format: email
+          example: customer@email.com
+        phone:
+          type: string
+          example: "0912345678"
+        address:
+          type: string
+          example: "123 Nguyễn Trãi, Hà Nội"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CustomerUpdate:
+      type: object
+      properties:
+        full_name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        address:
+          type: string
+
+    CustomerListResponse:
+      type: object
+      properties:
+        count:
+          type: integer
+        next:
+          type: string
+          nullable: true
+        previous:
+          type: string
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Customer'
+
+    # ─── Cart Schemas ─────────────────────────────────
+    Cart:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        customer_id:
+          type: integer
+          example: 1
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItem'
+        total_amount:
+          type: number
+          format: decimal
+          example: 25500000
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CartItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        product_id:
+          type: integer
+          example: 5
+        product_type:
+          type: string
+          enum: [computer, mobile]
+          example: computer
+        product_name:
+          type: string
+          example: "MacBook Pro 14"
+        product_image:
+          type: string
+          example: "https://..."
+        quantity:
+          type: integer
+          example: 1
+        price:
+          type: number
+          format: decimal
+          example: 25500000
+        subtotal:
+          type: number
+          format: decimal
+          example: 25500000
+
+    CartItemCreate:
+      type: object
+      required: [product_id, product_type, quantity]
+      properties:
+        product_id:
+          type: integer
+          example: 5
+        product_type:
+          type: string
+          enum: [computer, mobile]
+          example: computer
+        quantity:
+          type: integer
+          minimum: 1
+          example: 1
+
+    # ─── Order Schemas ────────────────────────────────
+    Order:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        customer_id:
+          type: integer
+          example: 1
+        total_amount:
+          type: number
+          format: decimal
+          example: 25500000
+        status:
+          type: string
+          enum: [pending, confirmed, shipping, completed, cancelled]
+          example: pending
+        shipping_address:
+          type: string
+          example: "123 Nguyễn Trãi, Hà Nội"
+        phone:
+          type: string
+          example: "0912345678"
+        note:
+          type: string
+          example: "Giao giờ hành chính"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    OrderDetail:
+      allOf:
+        - $ref: '#/components/schemas/Order'
+        - type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/OrderItem'
+            customer:
+              type: object
+              properties:
+                id:
+                  type: integer
+                full_name:
+                  type: string
+                email:
+                  type: string
+
+    OrderItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        product_id:
+          type: integer
+        product_type:
+          type: string
+          enum: [computer, mobile]
+        product_name:
+          type: string
+          example: "MacBook Pro 14"
+        quantity:
+          type: integer
+          example: 1
+        price:
+          type: number
+          format: decimal
+          example: 25500000
+
+    OrderCreate:
+      type: object
+      required: [shipping_address, phone]
+      properties:
+        shipping_address:
+          type: string
+          example: "123 Nguyễn Trãi, Hà Nội"
+        phone:
+          type: string
+          example: "0912345678"
+        note:
+          type: string
+          example: "Giao giờ hành chính"
+
+    OrderListResponse:
+      type: object
+      properties:
+        count:
+          type: integer
+        next:
+          type: string
+          nullable: true
+        previous:
+          type: string
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Order'
+
+    # ─── Review Schemas ───────────────────────────────
+    Review:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        customer_id:
+          type: integer
+          example: 1
+        customer_name:
+          type: string
+          example: "Trần Văn B"
+        product_id:
+          type: integer
+          example: 5
+        product_type:
+          type: string
+          enum: [computer, mobile]
+          example: computer
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          example: 5
+        comment:
+          type: string
+          example: "Sản phẩm rất tốt, giao hàng nhanh!"
+        created_at:
+          type: string
+          format: date-time
+
+    ReviewCreate:
+      type: object
+      required: [product_id, product_type, rating]
+      properties:
+        product_id:
+          type: integer
+          example: 5
+        product_type:
+          type: string
+          enum: [computer, mobile]
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          example: 5
+        comment:
+          type: string
+          example: "Sản phẩm rất tốt!"
+
+    ReviewListResponse:
+      type: object
+      properties:
+        count:
+          type: integer
+        next:
+          type: string
+          nullable: true
+        previous:
+          type: string
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Review'

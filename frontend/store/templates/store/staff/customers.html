@@ -1,0 +1,75 @@
+{% extends "store/staff/base.html" %}
+
+{% block title %}Quản lý khách hàng{% endblock %}
+
+{% block page_title %}Khách hàng{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="{% url 'staff-dashboard' %}">Bảng điều khiển</a>
+    <span>/</span>
+    <span>Khách hàng</span>
+</div>
+
+<div class="card">
+    <div class="card-title">
+        Danh sách khách hàng ({{ customers|length }})
+    </div>
+    
+    {% if customers %}
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Họ tên</th>
+                    <th>Email</th>
+                    <th>Số điện thoại</th>
+                    <th>Ngày tạo</th>
+                    <th>Trạng thái</th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for customer in customers %}
+                <tr>
+                    <td><strong>#{{ customer.id }}</strong></td>
+                    <td>
+                        <strong>{{ customer.full_name|default:customer.username }}</strong>
+                    </td>
+                    <td>
+                        {{ customer.email|default:"—" }}
+                    </td>
+                    <td>
+                        {{ customer.phone|default:"—" }}
+                    </td>
+                    <td>
+                        {% if customer.created_at %}
+                            {{ customer.created_at|date:"d/m/Y" }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if customer.is_active %}
+                            <span class="badge badge-success">Hoạt động</span>
+                        {% else %}
+                            <span class="badge badge-danger">Không hoạt động</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button class="btn btn-secondary btn-small" onclick="alert('View profile coming soon')">
+                            <i data-lucide="eye"></i> Xem
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+            <i data-lucide="users" style="width: 50px; height: 50px; margin: 0 auto 12px;"></i>
+            <p>Chưa có khách hàng nào</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

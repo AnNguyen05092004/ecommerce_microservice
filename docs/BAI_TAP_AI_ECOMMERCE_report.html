@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Báo cáo AI E-Commerce</title>
+    <style>
+        body {
+            font-family: "Times New Roman", serif;
+            line-height: 1.5;
+            margin: 40px;
+        }
+
+        h1,
+        h2,
+        h3 {
+            margin-top: 22px;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 26px;
+        }
+
+        h2 {
+            font-size: 20px;
+        }
+
+        h3 {
+            font-size: 16px;
+        }
+
+        p {
+            text-align: justify;
+            margin: 8px 0;
+        }
+
+        ul {
+            margin: 6px 0 10px 22px;
+        }
+
+        li {
+            margin: 4px 0;
+        }
+
+        .center {
+            text-align: center;
+        }
+
+        .toc li {
+            margin: 2px 0;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        th,
+        td {
+            border: 1px solid #333;
+            padding: 8px;
+            vertical-align: top;
+        }
+
+        th {
+            background: #f2f2f2;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>BÀI TẬP AI-ECOMMERCE</h1>
+    <p class="center"><strong>Đề tài:</strong> Ứng dụng AI trong thương mại điện tử và xây dựng hệ thống phân tích hành
+        vi khách hàng để tư vấn dịch vụ</p>
+    <p class="center"><strong>Môn học:</strong> Kiến trúc và Thiết kế Phần mềm</p>
+    <p class="center"><strong>Sinh viên thực hiện:</strong> .......................................................</p>
+    <p class="center"><strong>Ngày:</strong> .......................................................</p>
+
+    <h2>MỤC LỤC</h2>
+    <ul class="toc">
+        <li>1. Khảo sát các áp dụng AI trong e-commerce</li>
+        <li>2. Xây dựng ứng dụng "Phân tích hành vi khách hàng để tư vấn dịch vụ"</li>
+        <li>3. Kết luận và hướng phát triển</li>
+        <li>4. Phụ lục: Hướng dẫn chạy nhanh hệ thống</li>
+    </ul>
+
+    <h2>1. KHẢO SÁT CÁC ÁP DỤNG AI TRONG E-COMMERCE</h2>
+    <p>Trong thập kỷ gần đây, thương mại điện tử chuyển mạnh từ mô hình "website bán hàng" sang mô hình "hệ sinh thái dữ
+        liệu". Trong bối cảnh cạnh tranh cao, doanh nghiệp không còn chỉ tối ưu giao diện hay giá bán, mà phải tối ưu
+        toàn bộ hành trình khách hàng theo thời gian thực. AI trở thành công nghệ trung tâm vì có khả năng xử lý dữ liệu
+        lớn, tự động hóa quyết định và tạo trải nghiệm cá nhân hóa ở quy mô hàng triệu người dùng.</p>
+    <p>Nếu trước đây các hệ thống e-commerce dựa nhiều vào luật tĩnh (rule-based), thì hiện nay phần lớn doanh nghiệp
+        chuyển sang mô hình kết hợp: rule-based ở tầng kiểm soát an toàn và machine learning/deep learning ở tầng ra
+        quyết định thông minh. Điều này cho phép hệ thống phản ứng linh hoạt với biến động nhu cầu, mùa vụ, hành vi
+        duyệt web và biến động nguồn cung.</p>
+
+    <h3>1.1. Vai trò của AI trong chuỗi giá trị e-commerce</h3>
+    <p>AI tạo giá trị xuyên suốt vòng đời vận hành, từ khâu thu hút người dùng, chuyển đổi mua hàng, chăm sóc sau bán
+        đến tối ưu tồn kho và quản trị rủi ro. Ở góc độ kinh doanh, giá trị lớn nhất không nằm ở một mô hình đơn lẻ, mà
+        nằm ở khả năng kết nối nhiều mô hình trong cùng pipeline vận hành.</p>
+    <ul>
+        <li><strong>Giai đoạn thu hút (Acquisition):</strong> AI hỗ trợ phân khúc khách hàng, dự đoán đối tượng tiềm
+            năng cho quảng cáo, tối ưu bidding và nội dung quảng cáo.</li>
+        <li><strong>Giai đoạn chuyển đổi (Conversion):</strong> AI cá nhân hóa danh sách sản phẩm, thứ hạng hiển thị,
+            giá trị ưu đãi và thông điệp tại điểm chạm.</li>
+        <li><strong>Giai đoạn giữ chân (Retention):</strong> AI dự đoán churn, gợi ý chiến dịch chăm sóc, tạo ưu đãi
+            theo giá trị vòng đời khách hàng (CLV).</li>
+        <li><strong>Giai đoạn vận hành (Operations):</strong> AI tối ưu tồn kho, dự báo nhu cầu, cảnh báo gian lận và hỗ
+            trợ quyết định logistics.</li>
+    </ul>
+
+    <h3>1.2. Phân loại các bài toán AI phổ biến</h3>
+    <p><strong>(1) Recommendation Systems (hệ gợi ý):</strong> Đây là trụ cột của e-commerce hiện đại. Hệ thống gợi ý
+        nhận tín hiệu từ lịch sử xem sản phẩm, tìm kiếm, thời lượng xem, thêm giỏ hàng, đơn hàng đã mua, phản hồi đánh
+        giá và tín hiệu ngữ cảnh như thời gian truy cập, thiết bị, vị trí. Các cách tiếp cận phổ biến gồm collaborative
+        filtering, content-based filtering, matrix factorization, deep neural ranker, graph recommendation và hybrid
+        recommendation.</p>
+    <p>Trong thực tế, doanh nghiệp thường dùng nhiều lớp gợi ý: candidate generation (lấy danh sách ứng viên rộng),
+        ranking (xếp hạng theo mục tiêu chuyển đổi), và re-ranking (đảm bảo đa dạng danh mục, còn hàng, và ràng buộc
+        kinh doanh). Cách tiếp cận nhiều lớp giúp cân bằng giữa độ chính xác mô hình và yêu cầu vận hành.</p>
+    <p><strong>(2) Intelligent Search & Discovery:</strong> Tìm kiếm thông minh vượt qua mô hình so khớp từ khóa truyền
+        thống. AI giúp hiểu ý định ngôn ngữ tự nhiên, chuẩn hóa từ đồng nghĩa, sửa lỗi chính tả, mở rộng truy vấn và xếp
+        hạng theo mức độ phù hợp ngữ nghĩa. Kết hợp lexical retrieval với semantic retrieval cho phép hệ thống vừa giữ
+        độ chính xác thuật ngữ sản phẩm, vừa hiểu ngữ cảnh của câu hỏi.</p>
+    <p><strong>(3) Conversational Commerce:</strong> Chatbot tư vấn mua sắm là xu hướng tăng trưởng nhanh nhờ khả năng
+        hỗ trợ 24/7. Ở giai đoạn mới, chatbot không chỉ trả lời FAQ mà còn tham gia tư vấn chọn sản phẩm, giải thích
+        chính sách, hướng dẫn sau bán. Kiến trúc RAG giúp chatbot trả lời dựa trên tri thức có nguồn, giảm nguy cơ tạo
+        thông tin sai.</p>
+    <p><strong>(4) Dynamic Pricing & Promotion:</strong> AI dự báo nhu cầu theo thời gian và phân khúc để tối ưu giá và
+        khuyến mãi. Mục tiêu không chỉ là doanh thu ngắn hạn mà còn là biên lợi nhuận, vòng quay tồn kho và giá trị dài
+        hạn của khách hàng. Các doanh nghiệp lớn thường triển khai pricing theo danh mục, thay vì theo từng SKU đơn lẻ,
+        để đảm bảo tính ổn định vận hành.</p>
+    <p><strong>(5) Fraud Detection & Trust:</strong> AI phát hiện rủi ro giao dịch, tài khoản giả, hành vi lạm dụng
+        voucher, hoàn đơn bất thường. Kỹ thuật thường dùng gồm anomaly detection, supervised classification, graph-based
+        detection và rules engine. Đặc điểm của bài toán này là cần cân bằng false positive để không ảnh hưởng khách
+        hàng hợp lệ.</p>
+    <p><strong>(6) Demand Forecasting & Supply Chain:</strong> Dự báo nhu cầu giúp quyết định đặt hàng, phân bổ kho và
+        kế hoạch vận chuyển. Các mô hình time-series hiện đại kết hợp yếu tố mùa vụ, sự kiện marketing, thời tiết và dịp
+        lễ để giảm rủi ro thiếu hàng hoặc tồn kho dư thừa.</p>
+    <p><strong>(7) Sentiment & Review Intelligence:</strong> AI phân tích đánh giá khách hàng để phát hiện vấn đề chất
+        lượng sản phẩm, tốc độ giao hàng, dịch vụ hậu mãi. Kết quả này có thể phản hồi trực tiếp vào quy trình cải tiến
+        sản phẩm và chính sách nhà bán.</p>
+
+    <h3>1.3. Dữ liệu và đặc trưng trong hệ thống AI e-commerce</h3>
+    <p>Hiệu quả AI phụ thuộc mạnh vào chất lượng dữ liệu. Trong e-commerce, dữ liệu thường được chia thành bốn nhóm: dữ
+        liệu hành vi (event stream), dữ liệu giao dịch (orders/payments), dữ liệu danh mục sản phẩm
+        (catalog/attributes), và dữ liệu tri thức nghiệp vụ (policy/FAQ/knowledge base).</p>
+    <p><strong>Dữ liệu hành vi:</strong> gồm page_view, product_view, search, add_to_cart, checkout, payment_success,
+        review. Đây là nguồn chính để mô hình hóa intent và mức độ quan tâm. Độ chi tiết về timestamp, device, source
+        channel và session rất quan trọng cho phân tích chuỗi hành vi.</p>
+    <p><strong>Dữ liệu giao dịch:</strong> phản ánh kết quả cuối cùng của hành vi mua, có giá trị lớn cho mô hình dự
+        đoán chuyển đổi và CLV. Tuy nhiên, dữ liệu giao dịch thường mất cân bằng theo sản phẩm và phân khúc, cần chiến
+        lược lấy mẫu phù hợp.</p>
+    <p><strong>Dữ liệu danh mục:</strong> gồm thương hiệu, mức giá, cấu hình, thuộc tính kỹ thuật, tồn kho. Đây là nền
+        tảng cho content-based recommendation và semantic search.</p>
+    <p><strong>Dữ liệu tri thức:</strong> gồm chính sách đổi trả, bảo hành, vận chuyển, điều khoản ưu đãi. Dữ liệu này
+        đặc biệt quan trọng với chatbot để đảm bảo câu trả lời có căn cứ và nhất quán.</p>
+
+    <h3>1.4. Kiến trúc kỹ thuật tham chiếu cho AI e-commerce</h3>
+    <p>Một kiến trúc tham chiếu thường gồm các lớp sau:</p>
+    <ul>
+        <li><strong>Data Ingestion Layer:</strong> thu thập events theo thời gian thực và batch ETL cho dữ liệu lịch sử.
+        </li>
+        <li><strong>Storage Layer:</strong> data lake/data warehouse cho phân tích; OLTP cho tác vụ online.</li>
+        <li><strong>Feature Layer:</strong> chuẩn hóa và lưu đặc trưng dùng lại cho training/inference.</li>
+        <li><strong>Model Layer:</strong> mô hình phân loại, xếp hạng, dự báo, sinh ngôn ngữ.</li>
+        <li><strong>Retrieval Layer:</strong> chỉ mục KB và công cụ tìm kiếm ngữ nghĩa cho RAG.</li>
+        <li><strong>Serving Layer:</strong> API inference độ trễ thấp, có cache và giới hạn lỗi.</li>
+        <li><strong>Governance Layer:</strong> monitoring, drift detection, A/B test, rollback và audit logs.</li>
+    </ul>
+    <p>Điểm cốt lõi của kiến trúc này là tách rời training pipeline và serving pipeline. Training có thể chạy theo lịch;
+        serving cần ổn định liên tục. Mọi thay đổi mô hình nên qua cơ chế versioning và canary rollout trước khi phát
+        hành rộng.</p>
+
+    <h3>1.5. Chỉ số đánh giá và đo lường hiệu quả</h3>
+    <p>Đánh giá AI trong e-commerce cần kết hợp chỉ số offline và online.</p>
+    <p><strong>Offline metrics:</strong> precision@k, recall@k, NDCG cho ranking; F1/AUC cho phân loại; MAE/MAPE cho dự
+        báo; groundedness/citation hit rate cho RAG chatbot.</p>
+    <p><strong>Online metrics:</strong> CTR, add-to-cart rate, conversion rate, AOV, revenue per session, customer
+        support deflection, latency p95/p99, error rate.</p>
+    <p>Trong thực tế triển khai, doanh nghiệp thường dùng KPI bậc thang: KPI kỹ thuật (latency, lỗi), KPI trung gian
+        (CTR, session depth), KPI kinh doanh (doanh thu, lợi nhuận). Cách này giúp xác định nhanh nguyên nhân khi hiệu
+        quả chung giảm.</p>
+
+    <h3>1.6. Xu hướng công nghệ nổi bật giai đoạn hiện nay</h3>
+    <ul>
+        <li><strong>Hybrid Retrieval:</strong> kết hợp lexical và semantic để cân bằng độ chính xác thuật ngữ và hiểu
+            ngữ cảnh.</li>
+        <li><strong>RAG có citation:</strong> yêu cầu chatbot luôn chỉ rõ nguồn để tăng độ tin cậy và khả năng kiểm
+            chứng.</li>
+        <li><strong>Model Routing đa nhà cung cấp:</strong> linh hoạt giữa OpenAI, Gemini hoặc mô hình nội bộ để giảm
+            lock-in.</li>
+        <li><strong>AI Reliability Engineering:</strong> circuit breaker, fallback strategy, cache ngữ nghĩa, retry theo
+            chính sách.</li>
+        <li><strong>Observability cho LLM:</strong> theo dõi token usage, grounding score, fallback rate và cost per
+            request.</li>
+        <li><strong>AI Governance:</strong> chuẩn hóa dữ liệu, kiểm soát quyền truy cập, lưu vết prompt/response, kiểm
+            toán định kỳ.</li>
+    </ul>
+
+    <h3>1.7. Thách thức khi áp dụng AI trong e-commerce</h3>
+    <p><strong>Thách thức dữ liệu:</strong> thiếu nhất quán giữa các nguồn, mất cân bằng nhãn, nhiễu trong event logs,
+        và độ trễ đồng bộ dữ liệu. Nếu không xử lý tốt, mô hình có thể học sai hành vi thực.</p>
+    <p><strong>Thách thức mô hình:</strong> drift theo mùa vụ, thay đổi xu hướng tiêu dùng, cold-start với sản
+        phẩm/khách hàng mới, và trade-off giữa độ chính xác với độ trễ inference.</p>
+    <p><strong>Thách thức vận hành:</strong> chi phí hạ tầng AI tăng theo lưu lượng, khó giám sát end-to-end, khó
+        rollback khi nhiều thành phần phụ thuộc lẫn nhau.</p>
+    <p><strong>Thách thức với LLM/RAG:</strong> hallucination, prompt injection, phụ thuộc quota nhà cung cấp, và độ
+        nhất quán câu trả lời đa ngôn ngữ. Cần cơ chế guardrails, grounding và fallback để duy trì chất lượng dịch vụ.
+    </p>
+
+    <h3>1.8. Định hướng triển khai thực tế cho doanh nghiệp</h3>
+    <p>Thay vì triển khai AI đồng loạt, doanh nghiệp nên đi theo lộ trình 3 giai đoạn:</p>
+    <ul>
+        <li><strong>Giai đoạn 1 - Foundation:</strong> chuẩn hóa tracking, data quality, dashboard KPI nền tảng.</li>
+        <li><strong>Giai đoạn 2 - Quick Wins:</strong> triển khai gợi ý cơ bản, chatbot FAQ có nguồn, cảnh báo rủi ro
+            giao dịch.</li>
+        <li><strong>Giai đoạn 3 - Optimization:</strong> deep ranking, dynamic pricing, personalization đa kênh, và AI
+            governance production.</li>
+    </ul>
+    <p>Lộ trình này giúp kiểm soát chi phí, giảm rủi ro triển khai và đảm bảo mỗi bước đều tạo giá trị kinh doanh đo
+        được.</p>
+
+    <h3>1.9. Kết luận khảo sát</h3>
+    <p>Tổng quan cho thấy AI trong e-commerce không còn là thành phần bổ trợ mà đã trở thành năng lực cạnh tranh cốt
+        lõi. Doanh nghiệp có lợi thế khi xây dựng hệ thống dựa trên ba trụ: dữ liệu chất lượng, mô hình phù hợp bài toán
+        và kiến trúc vận hành đáng tin cậy. Với bối cảnh đề tài này, hướng tiếp cận "phân tích hành vi + KB + RAG +
+        triển khai microservices" là phù hợp cả về học thuật lẫn ứng dụng thực tế, đồng thời tạo nền tảng để mở rộng
+        sang các bài toán nâng cao trong tương lai.</p>
+
+    <h2>2. XÂY DỰNG ỨNG DỤNG "PHÂN TÍCH HÀNH VI KHÁCH HÀNG ĐỂ TƯ VẤN DỊCH VỤ"</h2>
+    <h3>2.1. Mục tiêu hệ thống</h3>
+    <p>Hệ thống được xây dựng theo kiến trúc microservices, trong đó advisor-service đóng vai trò AI engine. Mục tiêu
+        là: (1) phân tích hành vi theo user/session, (2) sinh gợi ý sản phẩm có giải thích, (3) trả lời chat tư vấn có
+        nguồn tham chiếu, (4) tích hợp trơn tru với gateway và frontend e-commerce.</p>
+
+    <h3>2.2. Xây dựng model_behavior dựa trên Deep Learning</h3>
+    <p><strong>Dữ liệu đầu vào:</strong> event logs gồm product_list_view, product_detail_view, search, add_to_cart,
+        checkout_start, order_created, review_created, chat_message_sent... Dữ liệu được gom theo entity (user_id hoặc
+        session_id), chuẩn hóa thành feature table và sequence table.</p>
+    <p><strong>Taxonomy hành vi:</strong> impulse_buyer, researcher, loyal_customer, price_sensitive, window_shopper.
+    </p>
+    <p><strong>Mô hình triển khai:</strong></p>
+    <ul>
+        <li>MLP v2 cho bài toán phân loại hành vi từ feature tổng hợp (tabular features).</li>
+        <li>GRU v1 cho chuỗi sự kiện hành vi theo thời gian.</li>
+        <li>Inference ưu tiên GRU khi có sequence artifact; fallback về MLP/heuristic khi thiếu artifact hoặc môi trường
+            không đủ điều kiện.</li>
+    </ul>
+    <p><strong>Artifacts đầu ra:</strong> behavior_v2_mlp.pkl, behavior_gru.pt, behavior_gru_config.pkl,
+        behavior_v2_metrics.json, behavior_gru_metrics.json.</p>
+    <p><strong>Ý nghĩa:</strong> hệ thống vừa có hiệu năng inference tốt, vừa có tính bền vững khi deploy mới (không bị
+        chết vì thiếu model).</p>
+
+    <h3>2.3. Xây dựng KB (Knowledge Base) cho tư vấn</h3>
+    <p>KB được tổ chức dưới dạng tài liệu có metadata: title, source, category, language, content. Dữ liệu mẫu gồm chính
+        sách đổi trả, shipping policy, warranty support, hướng dẫn chọn laptop/mobile/clothes.</p>
+    <p><strong>Indexing strategy:</strong> chunk theo kích thước + overlap để tăng chất lượng retrieval. Chỉ mục hybrid
+        TF-IDF được build thành artifact kb_hybrid_index.pkl để phục vụ truy vấn nhanh ở runtime.</p>
+    <p><strong>Lợi ích:</strong> chatbot tư vấn có thể dựa trên tri thức kiểm chứng, tránh trả lời mơ hồ hoặc sai chính
+        sách.</p>
+
+    <h3>2.4. Áp dụng RAG để xây dựng chat tư vấn</h3>
+    <p>Pipeline chat gồm: nhận câu hỏi -> retrieve top-k chunks từ KB -> đóng gói prompt theo cấu trúc -> gọi LLM ->
+        fallback nội bộ nếu provider lỗi -> trả answer + sources + rag metadata.</p>
+    <p><strong>Các thành phần quan trọng:</strong></p>
+    <ul>
+        <li>Context packing có giới hạn độ dài để giảm token cost.</li>
+        <li>Citation format để frontend hiển thị nguồn tham chiếu.</li>
+        <li>Guardrails cơ bản cho prompt injection/sensitive content.</li>
+        <li>Circuit breaker + cache để đảm bảo độ ổn định khi provider lỗi hoặc quota giới hạn.</li>
+    </ul>
+    <p><strong>Kết quả:</strong> chat endpoint luôn phản hồi ổn định nhờ fallback path, đồng thời cung cấp đầy đủ
+        ai_status, cloud_state, latency metrics để quan sát chất lượng runtime.</p>
+
+    <h3>2.5. Deploy và tích hợp trong hệ e-commerce</h3>
+    <p>Advisor-service được deploy qua Docker Compose cùng gateway và frontend. Gateway route toàn bộ API advisor theo
+        tiền tố /api/advisor-service/*, frontend gọi advisor chat qua endpoint nội bộ /advisor/chat. Trên giao diện
+        product detail, widget AI hiển thị trạng thái phản hồi, nguồn tham chiếu, quick actions và debug panel (ẩn theo
+        env).</p>
+    <p><strong>Tự động bootstrap khi deploy mới:</strong> startup command của advisor-service gọi bootstrap_ai_artifacts
+        để đảm bảo index và model artifacts luôn được tái tạo nếu thiếu. Cách này giảm rủi ro phụ thuộc dữ liệu cũ trên
+        máy phát triển.</p>
+
+    <h3>2.6. Đánh giá kết quả</h3>
+    <table>
+        <tr>
+            <th>Nhóm chỉ số</th>
+            <th>Kết quả chính</th>
+            <th>Ý nghĩa</th>
+        </tr>
+        <tr>
+            <td>Retrieval</td>
+            <td>relevance@k = 1.0</td>
+            <td>Context trả về bám sát intent truy vấn</td>
+        </tr>
+        <tr>
+            <td>Grounding</td>
+            <td>evidence_grounded_rate = 0.8333</td>
+            <td>Phần lớn câu trả lời có nguồn đúng theo golden set</td>
+        </tr>
+        <tr>
+            <td>Semantic quality</td>
+            <td>semantic_keyword_recall = 0.5417</td>
+            <td>Có không gian cải thiện diễn đạt đúng ý mong đợi</td>
+        </tr>
+        <tr>
+            <td>Recommendation latency</td>
+            <td>p95 ≈ 25ms</td>
+            <td>Đủ nhanh cho trải nghiệm thực tế</td>
+        </tr>
+        <tr>
+            <td>Stability</td>
+            <td>Fallback + circuit breaker hoạt động</td>
+            <td>Hệ thống không downtime khi provider lỗi</td>
+        </tr>
+    </table>
+
+    <h3>2.7. Các điểm cần cải thiện tiếp theo</h3>
+    <ul>
+        <li>Mở rộng KB theo domain thực tế để tăng độ phủ tư vấn.</li>
+        <li>Tăng chất lượng semantic scoring bằng rubric theo fact-level.</li>
+        <li>Bổ sung feedback loop từ người dùng (thumb up/down) để cải thiện dữ liệu huấn luyện.</li>
+        <li>Tối ưu class balance cho behavior labels ở dữ liệu thật.</li>
+        <li>Thiết lập quota/billing ổn định cho LLM provider để giảm fallback rate.</li>
+    </ul>
+
+    <h2>3. KẾT LUẬN VÀ HƯỚNG PHÁT TRIỂN</h2>
+    <p>Bài tập đã triển khai đầy đủ chuỗi giá trị AI trong e-commerce ở mức hệ thống: từ thu thập hành vi, huấn luyện mô
+        hình DL, xây dựng tri thức KB, áp dụng RAG cho chat, đến tích hợp/deploy vào kiến trúc microservices. Kết quả
+        cho thấy cách tiếp cận kết hợp "model + knowledge + guardrails + observability" là hướng khả thi, dễ mở rộng và
+        phù hợp yêu cầu thực tiễn.</p>
+    <p>Trong giai đoạn tiếp theo, hệ thống có thể mở rộng sang personalization theo thời gian thực, ranking đa mục tiêu
+        (doanh thu + trải nghiệm), và AI governance ở mức production (drift detection, canary rollout, automated
+        rollback).</p>
+
+    <h2>4. PHỤ LỤC: HƯỚNG DẪN CHẠY NHANH HỆ THỐNG</h2>
+    <h3>4.1. Khởi động</h3>
+    <p><strong>Bước 1:</strong> Cập nhật biến môi trường trong file .env (DB, service URLs, LLM provider/key/model).</p>
+    <p><strong>Bước 2:</strong> Chạy toàn bộ hệ thống:</p>
+    <p><code>docker compose up --build -d</code></p>
+
+    <h3>4.2. Kiểm tra health</h3>
+    <p><code>curl http://localhost:8000/health</code></p>
+    <p><code>curl http://localhost:8000/api/advisor-service/ai/health/</code></p>
+
+    <h3>4.3. Chạy benchmark</h3>
+    <p><code>python3 scripts/benchmark_advisor_baseline.py --base-url http://localhost:8000 --phase phase-final --version v1.0 --out docs/reports/ai_report_final.json</code>
+    </p>
+
+    <h3>4.4. Huấn luyện thủ công (nếu cần)</h3>
+    <p><code>docker compose exec -T advisor-service python manage.py bootstrap_ai_artifacts</code></p>
+    <p>Hoặc từng bước:</p>
+    <ul>
+        <li><code>python manage.py build_behavior_dataset</code></li>
+        <li><code>python manage.py train_behavior_v2</code></li>
+        <li><code>python manage.py train_behavior_gru</code></li>
+        <li><code>python manage.py build_kb_index</code></li>
+    </ul>
+
+    <p><strong>Hết báo cáo.</strong></p>
+</body>
+
+</html>

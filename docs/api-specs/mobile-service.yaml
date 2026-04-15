@@ -1,0 +1,561 @@
+# ============================================
+# Mobile Service — OpenAPI 3.0 Specification
+# ============================================
+openapi: 3.0.3
+info:
+  title: Mobile Service API
+  description: |
+    Microservice quản lý sản phẩm điện thoại, danh mục, cấu hình kỹ thuật, tồn kho.
+    Database: PostgreSQL
+  version: 1.0.0
+
+servers:
+  - url: http://mobile-service:8004
+    description: Docker internal
+  - url: http://localhost:8004
+    description: Local development
+
+tags:
+  - name: Mobile
+    description: Quản lý sản phẩm điện thoại
+  - name: Category
+    description: Danh mục điện thoại
+  - name: Health
+    description: Health check
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  # ─── MOBILES ────────────────────────────────────────
+  /api/mobiles/:
+    get:
+      tags: [Mobile]
+      summary: Danh sách điện thoại
+      description: Public — không cần xác thực. Hỗ trợ tìm kiếm, lọc, phân trang.
+      operationId: listMobiles
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Tìm theo tên sản phẩm
+        - name: brand
+          in: query
+          schema:
+            type: string
+          description: Lọc theo thương hiệu
+        - name: category
+          in: query
+          schema:
+            type: integer
+          description: Lọc theo category ID
+        - name: price_min
+          in: query
+          schema:
+            type: number
+          description: Giá tối thiểu
+        - name: price_max
+          in: query
+          schema:
+            type: number
+          description: Giá tối đa
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [available, unavailable]
+          description: Lọc theo trạng thái
+        - name: ordering
+          in: query
+          schema:
+            type: string
+            enum: [price, -price, name, -name, created_at, -created_at]
+          description: Sắp xếp
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Danh sách điện thoại
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileListResponse'
+
+    post:
+      tags: [Mobile]
+      summary: Thêm điện thoại mới (Staff only)
+      operationId: createMobile
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobileCreate'
+      responses:
+        '201':
+          description: Tạo thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/mobiles/{id}/:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+
+    get:
+      tags: [Mobile]
+      summary: Chi tiết điện thoại (bao gồm specs)
+      description: Public — không cần xác thực
+      operationId: getMobile
+      responses:
+        '200':
+          description: Chi tiết điện thoại + cấu hình
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Mobile]
+      summary: Cập nhật điện thoại (Staff only)
+      operationId: updateMobile
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobileUpdate'
+      responses:
+        '200':
+          description: Cập nhật thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Mobile]
+      summary: Xoá điện thoại (Staff only)
+      operationId: deleteMobile
+      security:
+        - BearerAuth: []
+      responses:
+        '204':
+          description: Xoá thành công
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/mobiles/{id}/stock/:
+    patch:
+      tags: [Mobile]
+      summary: Cập nhật tồn kho (Staff / inter-service)
+      operationId: updateMobileStock
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [stock]
+              properties:
+                stock:
+                  type: integer
+                  minimum: 0
+                  example: 100
+      responses:
+        '200':
+          description: Cập nhật tồn kho thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mobile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ─── CATEGORIES ─────────────────────────────────────
+  /api/categories/:
+    get:
+      tags: [Category]
+      summary: Danh sách danh mục điện thoại
+      operationId: listCategories
+      responses:
+        '200':
+          description: Danh sách danh mục
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+
+    post:
+      tags: [Category]
+      summary: Tạo danh mục mới (Staff only)
+      operationId: createCategory
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryCreate'
+      responses:
+        '201':
+          description: Tạo thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/categories/{id}/:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+
+    get:
+      tags: [Category]
+      summary: Chi tiết danh mục
+      operationId: getCategory
+      responses:
+        '200':
+          description: Thông tin danh mục
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Category]
+      summary: Cập nhật danh mục (Staff only)
+      operationId: updateCategory
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryCreate'
+      responses:
+        '200':
+          description: Cập nhật thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Category]
+      summary: Xoá danh mục (Staff only)
+      operationId: deleteCategory
+      security:
+        - BearerAuth: []
+      responses:
+        '204':
+          description: Xoá thành công
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    Unauthorized:
+      description: Chưa xác thực
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Không có quyền
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    BadRequest:
+      description: Dữ liệu không hợp lệ
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Không tìm thấy
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        detail:
+          type: string
+
+    # ─── Mobile Schemas ───────────────────────────────
+    Mobile:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "iPhone 15 Pro Max"
+        brand:
+          type: string
+          example: "Apple"
+        price:
+          type: number
+          format: decimal
+          example: 34990000
+        description:
+          type: string
+          example: "iPhone 15 Pro Max với chip A17 Pro, camera 48MP"
+        image:
+          type: string
+          example: "https://example.com/images/iphone15promax.jpg"
+        stock:
+          type: integer
+          example: 50
+        status:
+          type: string
+          enum: [available, unavailable]
+          example: available
+        category:
+          $ref: '#/components/schemas/Category'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    MobileDetail:
+      allOf:
+        - $ref: '#/components/schemas/Mobile'
+        - type: object
+          properties:
+            specs:
+              $ref: '#/components/schemas/MobileSpec'
+
+    MobileSpec:
+      type: object
+      properties:
+        screen_size:
+          type: string
+          example: "6.7 inch"
+        battery:
+          type: string
+          example: "4441 mAh"
+        camera:
+          type: string
+          example: "48MP + 12MP + 12MP"
+        storage:
+          type: string
+          example: "256GB"
+        ram:
+          type: string
+          example: "8GB"
+        os:
+          type: string
+          example: "iOS 17"
+
+    MobileCreate:
+      type: object
+      required: [name, brand, price, category_id]
+      properties:
+        name:
+          type: string
+          maxLength: 255
+          example: "iPhone 15 Pro Max"
+        brand:
+          type: string
+          maxLength: 100
+          example: "Apple"
+        price:
+          type: number
+          format: decimal
+          minimum: 0
+          example: 34990000
+        description:
+          type: string
+          example: "iPhone 15 Pro Max với chip A17 Pro"
+        image:
+          type: string
+          maxLength: 500
+        stock:
+          type: integer
+          minimum: 0
+          default: 0
+          example: 50
+        category_id:
+          type: integer
+          example: 1
+        specs:
+          $ref: '#/components/schemas/MobileSpecCreate'
+
+    MobileSpecCreate:
+      type: object
+      properties:
+        screen_size:
+          type: string
+          maxLength: 20
+        battery:
+          type: string
+          maxLength: 50
+        camera:
+          type: string
+          maxLength: 100
+        storage:
+          type: string
+          maxLength: 50
+        ram:
+          type: string
+          maxLength: 50
+        os:
+          type: string
+          maxLength: 50
+
+    MobileUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        brand:
+          type: string
+          maxLength: 100
+        price:
+          type: number
+          format: decimal
+          minimum: 0
+        description:
+          type: string
+        image:
+          type: string
+          maxLength: 500
+        stock:
+          type: integer
+          minimum: 0
+        category_id:
+          type: integer
+        status:
+          type: string
+          enum: [available, unavailable]
+        specs:
+          $ref: '#/components/schemas/MobileSpecCreate'
+
+    MobileListResponse:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 30
+        next:
+          type: string
+          nullable: true
+        previous:
+          type: string
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Mobile'
+
+    # ─── Category Schemas ─────────────────────────────
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "Smartphone"
+        description:
+          type: string
+          example: "Điện thoại thông minh các loại"
+
+    CategoryCreate:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          example: "Smartphone"
+        description:
+          type: string
+          example: "Điện thoại thông minh các loại"

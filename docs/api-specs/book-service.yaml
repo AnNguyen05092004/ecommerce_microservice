@@ -1,0 +1,562 @@
+# ============================================
+# Book Service — OpenAPI 3.0 Specification
+# ============================================
+openapi: 3.0.3
+info:
+  title: Book Service API
+  description: |
+    Microservice quản lý sản phẩm sách công nghệ (laptop/PC), danh mục, cấu hình kỹ thuật, tồn kho.
+    Database: PostgreSQL
+  version: 1.0.0
+
+servers:
+  - url: http://book-service:8015
+    description: Docker internal
+  - url: http://localhost:8015
+    description: Local development
+
+tags:
+  - name: Book
+    description: Quản lý sản phẩm sách công nghệ
+  - name: Category
+    description: Danh mục sách công nghệ
+  - name: Health
+    description: Health check
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  # ─── COMPUTERS ──────────────────────────────────────
+  /api/books/:
+    get:
+      tags: [Book]
+      summary: Danh sách sách công nghệ
+      description: Public — không cần xác thực. Hỗ trợ tìm kiếm, lọc, phân trang.
+      operationId: listBooks
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Tìm theo tên sản phẩm
+        - name: brand
+          in: query
+          schema:
+            type: string
+          description: Lọc theo thương hiệu
+        - name: category
+          in: query
+          schema:
+            type: integer
+          description: Lọc theo category ID
+        - name: price_min
+          in: query
+          schema:
+            type: number
+          description: Giá tối thiểu
+        - name: price_max
+          in: query
+          schema:
+            type: number
+          description: Giá tối đa
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [available, unavailable]
+          description: Lọc theo trạng thái
+        - name: ordering
+          in: query
+          schema:
+            type: string
+            enum: [price, -price, name, -name, created_at, -created_at]
+          description: Sắp xếp
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Danh sách sách công nghệ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookListResponse'
+
+    post:
+      tags: [Book]
+      summary: Thêm sách công nghệ mới (Staff only)
+      operationId: createBook
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookCreate'
+      responses:
+        '201':
+          description: Tạo thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/books/{id}/:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+
+    get:
+      tags: [Book]
+      summary: Chi tiết sách công nghệ (bao gồm specs)
+      description: Public — không cần xác thực
+      operationId: getBook
+      responses:
+        '200':
+          description: Chi tiết sách công nghệ + cấu hình
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Book]
+      summary: Cập nhật sách công nghệ (Staff only)
+      operationId: updateBook
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookUpdate'
+      responses:
+        '200':
+          description: Cập nhật thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Book]
+      summary: Xoá sách công nghệ (Staff only)
+      operationId: deleteBook
+      security:
+        - BearerAuth: []
+      responses:
+        '204':
+          description: Xoá thành công
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/books/{id}/stock/:
+    patch:
+      tags: [Book]
+      summary: Cập nhật tồn kho (Staff / inter-service)
+      operationId: updateBookStock
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [stock]
+              properties:
+                stock:
+                  type: integer
+                  minimum: 0
+                  example: 50
+      responses:
+        '200':
+          description: Cập nhật tồn kho thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ─── CATEGORIES ─────────────────────────────────────
+  /api/categories/:
+    get:
+      tags: [Category]
+      summary: Danh sách danh mục sách công nghệ
+      operationId: listCategories
+      responses:
+        '200':
+          description: Danh sách danh mục
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+
+    post:
+      tags: [Category]
+      summary: Tạo danh mục mới (Staff only)
+      operationId: createCategory
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryCreate'
+      responses:
+        '201':
+          description: Tạo thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/categories/{id}/:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+
+    get:
+      tags: [Category]
+      summary: Chi tiết danh mục
+      operationId: getCategory
+      responses:
+        '200':
+          description: Thông tin danh mục
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Category]
+      summary: Cập nhật danh mục (Staff only)
+      operationId: updateCategory
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryCreate'
+      responses:
+        '200':
+          description: Cập nhật thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Category]
+      summary: Xoá danh mục (Staff only)
+      operationId: deleteCategory
+      security:
+        - BearerAuth: []
+      responses:
+        '204':
+          description: Xoá thành công
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    Unauthorized:
+      description: Chưa xác thực
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Không có quyền
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    BadRequest:
+      description: Dữ liệu không hợp lệ
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Không tìm thấy
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        detail:
+          type: string
+
+    # ─── Book Schemas ─────────────────────────────
+    Book:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "MacBook Pro 14 M3"
+        brand:
+          type: string
+          example: "Apple"
+        price:
+          type: number
+          format: decimal
+          example: 49990000
+        description:
+          type: string
+          example: "MacBook Pro 14 inch với chip M3, hiệu năng vượt trội"
+        image:
+          type: string
+          example: "https://example.com/images/macbook-pro-14.jpg"
+        stock:
+          type: integer
+          example: 25
+        status:
+          type: string
+          enum: [available, unavailable]
+          example: available
+        category:
+          $ref: '#/components/schemas/Category'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    BookDetail:
+      allOf:
+        - $ref: '#/components/schemas/Book'
+        - type: object
+          properties:
+            specs:
+              $ref: '#/components/schemas/BookSpec'
+
+    BookSpec:
+      type: object
+      properties:
+        cpu:
+          type: string
+          example: "Apple M3 Pro 12-core"
+        ram:
+          type: string
+          example: "18GB Unified Memory"
+        storage:
+          type: string
+          example: "512GB SSD"
+        gpu:
+          type: string
+          example: "Apple M3 Pro 18-core GPU"
+        screen_size:
+          type: string
+          example: "14.2 inch"
+        os:
+          type: string
+          example: "macOS Sonoma"
+
+    BookCreate:
+      type: object
+      required: [name, brand, price, category_id]
+      properties:
+        name:
+          type: string
+          maxLength: 255
+          example: "MacBook Pro 14 M3"
+        brand:
+          type: string
+          maxLength: 100
+          example: "Apple"
+        price:
+          type: number
+          format: decimal
+          minimum: 0
+          example: 49990000
+        description:
+          type: string
+          example: "MacBook Pro 14 inch với chip M3"
+        image:
+          type: string
+          maxLength: 500
+          example: "https://example.com/images/macbook.jpg"
+        stock:
+          type: integer
+          minimum: 0
+          default: 0
+          example: 25
+        category_id:
+          type: integer
+          example: 1
+        specs:
+          $ref: '#/components/schemas/BookSpecCreate'
+
+    BookSpecCreate:
+      type: object
+      properties:
+        cpu:
+          type: string
+          maxLength: 100
+        ram:
+          type: string
+          maxLength: 50
+        storage:
+          type: string
+          maxLength: 100
+        gpu:
+          type: string
+          maxLength: 100
+        screen_size:
+          type: string
+          maxLength: 20
+        os:
+          type: string
+          maxLength: 50
+
+    BookUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        brand:
+          type: string
+          maxLength: 100
+        price:
+          type: number
+          format: decimal
+          minimum: 0
+        description:
+          type: string
+        image:
+          type: string
+          maxLength: 500
+        stock:
+          type: integer
+          minimum: 0
+        category_id:
+          type: integer
+        status:
+          type: string
+          enum: [available, unavailable]
+        specs:
+          $ref: '#/components/schemas/BookSpecCreate'
+
+    BookListResponse:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 50
+        next:
+          type: string
+          nullable: true
+        previous:
+          type: string
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Book'
+
+    # ─── Category Schemas ─────────────────────────────
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "Laptop"
+        description:
+          type: string
+          example: "Máy tính xách tay các loại"
+
+    CategoryCreate:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          example: "Laptop"
+        description:
+          type: string
+          example: "Máy tính xách tay các loại"

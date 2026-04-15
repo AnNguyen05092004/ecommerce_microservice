@@ -1,0 +1,428 @@
+# ============================================
+# Staff Service — OpenAPI 3.0 Specification
+# ============================================
+openapi: 3.0.3
+info:
+  title: Staff Service API
+  description: |
+    Microservice quản lý nhân viên, xác thực staff/admin, phân quyền.
+    Database: MySQL
+  version: 1.0.0
+
+servers:
+  - url: http://staff-service:8001
+    description: Docker internal
+  - url: http://localhost:8001
+    description: Local development
+
+tags:
+  - name: Auth
+    description: Xác thực nhân viên
+  - name: Staff
+    description: Quản lý nhân viên (CRUD)
+  - name: Health
+    description: Health check
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /api/auth/login/:
+    post:
+      tags: [Auth]
+      summary: Đăng nhập staff/admin
+      operationId: staffLogin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Đăng nhập thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Sai username hoặc password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/verify/:
+    post:
+      tags: [Auth]
+      summary: Xác thực JWT token (Gateway gọi)
+      operationId: verifyToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token:
+                  type: string
+      responses:
+        '200':
+          description: Token hợp lệ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenVerifyResponse'
+        '401':
+          description: Token không hợp lệ hoặc hết hạn
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/staff/:
+    get:
+      tags: [Staff]
+      summary: Danh sách nhân viên
+      operationId: listStaff
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: role
+          in: query
+          schema:
+            type: string
+            enum: [staff, admin]
+          description: Lọc theo vai trò
+        - name: is_active
+          in: query
+          schema:
+            type: boolean
+          description: Lọc theo trạng thái hoạt động
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Tìm theo tên hoặc email
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Danh sách nhân viên
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    post:
+      tags: [Staff]
+      summary: Tạo nhân viên mới (Admin only)
+      operationId: createStaff
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StaffCreate'
+      responses:
+        '201':
+          description: Tạo nhân viên thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Staff'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/staff/{id}/:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+
+    get:
+      tags: [Staff]
+      summary: Chi tiết nhân viên
+      operationId: getStaff
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Thông tin nhân viên
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Staff'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Staff]
+      summary: Cập nhật nhân viên
+      operationId: updateStaff
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StaffUpdate'
+      responses:
+        '200':
+          description: Cập nhật thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Staff'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Staff]
+      summary: Xoá nhân viên (Admin only)
+      operationId: deleteStaff
+      security:
+        - BearerAuth: []
+      responses:
+        '204':
+          description: Xoá thành công
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    Unauthorized:
+      description: Chưa xác thực
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Không có quyền truy cập
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    BadRequest:
+      description: Dữ liệu không hợp lệ
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Không tìm thấy
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Error message"
+        detail:
+          type: string
+
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          example: admin01
+        password:
+          type: string
+          format: password
+          example: password123
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIs..."
+        user:
+          $ref: '#/components/schemas/StaffBasic'
+
+    TokenVerifyResponse:
+      type: object
+      properties:
+        valid:
+          type: boolean
+          example: true
+        user_id:
+          type: integer
+          example: 1
+        username:
+          type: string
+          example: admin01
+        role:
+          type: string
+          enum: [staff, admin]
+          example: admin
+        user_type:
+          type: string
+          example: staff
+
+    StaffBasic:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        username:
+          type: string
+          example: admin01
+        full_name:
+          type: string
+          example: "Nguyễn Văn A"
+        role:
+          type: string
+          enum: [staff, admin]
+
+    Staff:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        username:
+          type: string
+          example: admin01
+        full_name:
+          type: string
+          example: "Nguyễn Văn A"
+        email:
+          type: string
+          format: email
+          example: admin@techstore.com
+        phone:
+          type: string
+          example: "0901234567"
+        role:
+          type: string
+          enum: [staff, admin]
+          example: admin
+        is_active:
+          type: boolean
+          example: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    StaffCreate:
+      type: object
+      required: [username, password, full_name, email, role]
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 150
+        password:
+          type: string
+          format: password
+          minLength: 8
+        full_name:
+          type: string
+          maxLength: 255
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+          maxLength: 20
+        role:
+          type: string
+          enum: [staff, admin]
+          default: staff
+
+    StaffUpdate:
+      type: object
+      properties:
+        full_name:
+          type: string
+          maxLength: 255
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+          maxLength: 20
+        role:
+          type: string
+          enum: [staff, admin]
+        is_active:
+          type: boolean
+
+    StaffListResponse:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 25
+        next:
+          type: string
+          nullable: true
+          example: "http://staff-service:8001/api/staff/?page=2"
+        previous:
+          type: string
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Staff'

@@ -1,0 +1,413 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Danh sách sản phẩm | TechStore</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'store/css/site.css' %}" />
+</head>
+<body class="inner-page">
+  <div class="shipping-bar"><i data-lucide="truck"></i> Miễn phí vận chuyển toàn quốc cho đơn trên 500.000đ</div>
+
+  <header class="main-header template-header">
+    <a class="brand template-brand" href="/"><i data-lucide="book-open-text"></i> TechStore</a>
+    <form class="template-search" action="/products" method="get">
+      <i data-lucide="search"></i>
+      <div class="search-suggest-wrap template-search-suggest-wrap">
+        <input id="header-search-input" type="text" name="search" value="{{ selected_search }}" placeholder="Tìm sản phẩm, thương hiệu..." autocomplete="off" />
+        <div id="header-search-suggest-box" class="search-suggest-box hidden" role="listbox" aria-label="Gợi ý sản phẩm AI"></div>
+      </div>
+      {% if selected_type and selected_type != 'all' %}
+      <input type="hidden" name="type" value="{{ selected_type }}" />
+      {% endif %}
+    </form>
+    <nav class="main-nav template-nav">
+      <a href="/">Trang chủ</a>
+      <details class="category-menu">
+        <summary>Danh mục</summary>
+        <div class="category-dropdown">
+          <a href="/products?type=computer"><span class="cd-icon"><i data-lucide="laptop"></i></span>Laptop</a>
+          <a href="/products?type=mobile"><span class="cd-icon"><i data-lucide="smartphone"></i></span>Điện thoại</a>
+          <a href="/products?type=tablet"><span class="cd-icon"><i data-lucide="tablet"></i></span>Tablet</a>
+          <a href="/products?type=audio"><span class="cd-icon"><i data-lucide="headphones"></i></span>Audio</a>
+          <a href="/products?type=wearable"><span class="cd-icon"><i data-lucide="watch"></i></span>Wearable</a>
+          <a href="/products?type=component"><span class="cd-icon"><i data-lucide="cpu"></i></span>Linh kiện</a>
+          <a href="/products?type=peripheral"><span class="cd-icon"><i data-lucide="mouse-pointer-2"></i></span>Phụ kiện PC</a>
+          <a href="/products?type=monitor"><span class="cd-icon"><i data-lucide="monitor"></i></span>Màn hình</a>
+          <a href="/products?type=accessory"><span class="cd-icon"><i data-lucide="plug"></i></span>Phụ kiện điện thoại</a>
+          <a href="/products?type=charging"><span class="cd-icon"><i data-lucide="battery-charging"></i></span>Sạc và pin</a>
+          <a href="/products?type=book"><span class="cd-icon"><i data-lucide="book-open"></i></span>Sách</a>
+        </div>
+      </details>
+    </nav>
+    <div class="template-actions">
+      <a class="cart-btn" href="/cart" aria-label="Giỏ hàng">
+        <i data-lucide="shopping-cart"></i>
+        <span>{{ cart_count }}</span>
+      </a>
+      {% if auth_user_type == 'staff' %}
+      <details class="account-menu">
+        <summary class="template-user account-trigger"><i data-lucide="user"></i> Staff <i data-lucide="chevron-down"></i></summary>
+        <div class="account-dropdown">
+          <a href="/staff/dashboard"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+          <a class="danger" href="/logout"><i data-lucide="log-out"></i> Đăng xuất</a>
+        </div>
+      </details>
+      {% elif auth_user_type == 'customer' %}
+      <details class="account-menu">
+        <summary class="template-user account-trigger"><i data-lucide="user"></i> {{ auth_user_name|default:'Khách hàng' }} <i data-lucide="chevron-down"></i></summary>
+        <div class="account-dropdown">
+          <a href="/cart"><i data-lucide="shopping-bag"></i> Giỏ hàng</a>
+          <a href="/my-orders"><i data-lucide="package"></i> Đơn hàng</a>
+          <a class="danger" href="/logout"><i data-lucide="log-out"></i> Đăng xuất</a>
+        </div>
+      </details>
+      {% else %}
+      <a class="template-user" href="/login/customer"><i data-lucide="user"></i> Đăng nhập</a>
+      {% endif %}
+    </div>
+  </header>
+
+  <div class="page-hero-mini">
+    <div class="page-hero-mini-content">
+      <nav class="page-breadcrumb" aria-label="breadcrumb">
+        <a href="/">Trang chủ</a>
+        <span>/</span>
+        <strong>Sản phẩm{% if selected_type and selected_type != 'all' %} — {{ selected_type|upper }}{% endif %}</strong>
+      </nav>
+      <h1>Danh sách sản phẩm</h1>
+      <p>{{ total_products }} kết quả{% if selected_type and selected_type != 'all' %} trong danh mục <strong>{{ selected_type|upper }}</strong>{% endif %}{% if selected_search %}, tìm kiếm: "<em>{{ selected_search }}</em>"{% endif %}</p>
+      {% if selected_search and semantic_search_mode == 'graph_neo4j' %}
+      <span class="semantic-search-badge"><i data-lucide="sparkles"></i> AI semantic search active</span>
+      {% elif selected_search and semantic_search_mode == 'fallback_local' %}
+      <span class="semantic-search-badge is-fallback"><i data-lucide="search"></i> Fallback local search</span>
+      {% endif %}
+    </div>
+    <div class="page-hero-mini-type-pills">
+      <a href="/products" class="type-pill {% if selected_type == 'all' or not selected_type %}active{% endif %}">Tất cả</a>
+      <a href="/products?type=computer" class="type-pill {% if selected_type == 'computer' %}active{% endif %}">Laptop</a>
+      <a href="/products?type=mobile" class="type-pill {% if selected_type == 'mobile' %}active{% endif %}">Điện thoại</a>
+      <a href="/products?type=tablet" class="type-pill {% if selected_type == 'tablet' %}active{% endif %}">Tablet</a>
+      <a href="/products?type=audio" class="type-pill {% if selected_type == 'audio' %}active{% endif %}">Audio</a>
+      <a href="/products?type=component" class="type-pill {% if selected_type == 'component' %}active{% endif %}">Linh kiện</a>
+      <a href="/products?type=book" class="type-pill {% if selected_type == 'book' %}active{% endif %}">Sách</a>
+    </div>
+  </div>
+
+  <main class="products-layout">
+    <aside class="filter-panel">
+      <h2><i data-lucide="sliders-horizontal"></i> Bộ lọc</h2>
+      <form method="get" action="/products" class="filter-form">
+        <label>Loại sản phẩm</label>
+        <select name="type">
+          <option value="all" {% if selected_type == 'all' %}selected{% endif %}>Tất cả</option>
+          <option value="computer" {% if selected_type == 'computer' %}selected{% endif %}>Laptop</option>
+          <option value="mobile" {% if selected_type == 'mobile' %}selected{% endif %}>Điện thoại</option>
+          <option value="clothes" {% if selected_type == 'clothes' %}selected{% endif %}>Quần áo</option>
+          <option value="tablet" {% if selected_type == 'tablet' %}selected{% endif %}>Tablet</option>
+          <option value="audio" {% if selected_type == 'audio' %}selected{% endif %}>Audio</option>
+          <option value="wearable" {% if selected_type == 'wearable' %}selected{% endif %}>Wearable</option>
+          <option value="component" {% if selected_type == 'component' %}selected{% endif %}>Linh kiện</option>
+          <option value="peripheral" {% if selected_type == 'peripheral' %}selected{% endif %}>Phụ kiện PC</option>
+          <option value="monitor" {% if selected_type == 'monitor' %}selected{% endif %}>Màn hình</option>
+          <option value="accessory" {% if selected_type == 'accessory' %}selected{% endif %}>Phụ kiện điện thoại</option>
+          <option value="charging" {% if selected_type == 'charging' %}selected{% endif %}>Sạc và pin</option>
+          <option value="book" {% if selected_type == 'book' %}selected{% endif %}>Sách</option>
+        </select>
+
+        <label>Tìm kiếm</label>
+        <div class="search-suggest-wrap">
+          <input
+            id="product-search-input"
+            name="search"
+            type="text"
+            value="{{ selected_search }}"
+            placeholder="Tên sản phẩm hoặc từ khóa..."
+            autocomplete="off"
+          >
+          <div id="search-suggest-box" class="search-suggest-box hidden" role="listbox" aria-label="AI keyword suggestions"></div>
+        </div>
+
+        <label>Brand</label>
+        <select name="brand">
+          <option value="">Tất cả thương hiệu</option>
+          {% for brand in brands %}
+          <option value="{{ brand }}" {% if selected_brand == brand %}selected{% endif %}>{{ brand }}</option>
+          {% endfor %}
+        </select>
+
+        <label>Category</label>
+        <select name="category">
+          <option value="">Tất cả danh mục</option>
+          {% for category in categories %}
+          <option value="{{ category.key }}" {% if selected_category == category.key %}selected{% endif %}>{{ category.name }} ({{ category.type }})</option>
+          {% endfor %}
+        </select>
+
+        <label>Giá từ</label>
+        <input name="price_min" type="number" min="0" value="{{ selected_price_min }}" placeholder="0">
+
+        <label>Giá đến</label>
+        <input name="price_max" type="number" min="0" value="{{ selected_price_max }}" placeholder="100000000">
+
+        <label>Tồn kho từ</label>
+        <input name="stock_min" type="number" min="0" value="{{ selected_stock_min }}" placeholder="0">
+
+        <label>Tồn kho đến</label>
+        <input name="stock_max" type="number" min="0" value="{{ selected_stock_max }}" placeholder="1000">
+
+        <label>Sắp xếp</label>
+        <select name="sort">
+          <option value="newest" {% if selected_sort == 'newest' %}selected{% endif %}>Mới nhất</option>
+          <option value="oldest" {% if selected_sort == 'oldest' %}selected{% endif %}>Cũ nhất</option>
+          <option value="price_asc" {% if selected_sort == 'price_asc' %}selected{% endif %}>Giá tăng dần</option>
+          <option value="price_desc" {% if selected_sort == 'price_desc' %}selected{% endif %}>Giá giảm dần</option>
+          <option value="name_asc" {% if selected_sort == 'name_asc' %}selected{% endif %}>Ten A-Z</option>
+          <option value="name_desc" {% if selected_sort == 'name_desc' %}selected{% endif %}>Ten Z-A</option>
+          <option value="stock_asc" {% if selected_sort == 'stock_asc' %}selected{% endif %}>Tồn kho tăng dần</option>
+          <option value="stock_desc" {% if selected_sort == 'stock_desc' %}selected{% endif %}>Tồn kho giảm dần</option>
+        </select>
+
+        <button type="submit" class="btn btn-primary">Áp dụng</button>
+      </form>
+    </aside>
+
+    <section class="products-panel">
+      <div class="products-head">
+        <p>Trang {{ current_page }}/{{ total_pages }}</p>
+        {% if selected_search and semantic_search_mode == 'graph_neo4j' %}
+        <span class="semantic-search-badge compact"><i data-lucide="sparkles"></i> Semantic ranking</span>
+        {% endif %}
+      </div>
+
+      <div class="products-grid">
+        {% for product in products %}
+        <a class="product-link" href="/products/{{ product.product_type }}/{{ product.id }}">
+        <article class="product-card">
+          <div class="image-wrap">
+            <span class="badge">{{ product.badge }}</span>
+            <img src="{{ product.image }}" alt="{{ product.name }}" />
+          </div>
+          <div class="product-body">
+            <div class="meta">{{ product.brand }} • {{ product.product_type|upper }}</div>
+            <h3>{{ product.name }}</h3>
+            <div class="price-line">
+              <strong>{{ product.price }}</strong>
+            </div>
+            <div class="stock">Còn lại: {{ product.stock }}</div>
+          </div>
+        </article>
+        </a>
+        {% empty %}
+        <div class="empty-state">
+          <i data-lucide="search-x"></i>
+          <h3>Không tìm thấy sản phẩm phù hợp</h3>
+          <p>Thử thay đổi bộ lọc giá/thương hiệu/danh mục.</p>
+        </div>
+        {% endfor %}
+      </div>
+
+      {% if total_pages > 1 %}
+      <nav class="pagination" aria-label="pagination">
+        {% if has_prev %}
+        <a class="page-btn" href="/products?{{ prev_query }}">Trước</a>
+        {% endif %}
+
+        {% for item in pagination_links %}
+          {% if item.type == 'ellipsis' %}
+          <span class="page-ellipsis">...</span>
+          {% elif item.is_current %}
+          <span class="page-btn active">{{ item.page }}</span>
+          {% else %}
+          <a class="page-btn" href="/products?{{ item.query }}">{{ item.page }}</a>
+          {% endif %}
+        {% endfor %}
+
+        {% if has_next %}
+        <a class="page-btn" href="/products?{{ next_query }}">Sau</a>
+        {% endif %}
+      </nav>
+      {% endif %}
+    </section>
+  </main>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    lucide.createIcons();
+
+    (function () {
+      const input = document.getElementById("product-search-input");
+      const box = document.getElementById("search-suggest-box");
+      const productType = "{{ selected_type|escapejs }}";
+      if (!input || !box) {
+        return;
+      }
+
+      let timer = null;
+      let currentFocus = -1;
+
+      function hideSuggestions() {
+        box.classList.add("hidden");
+        box.innerHTML = "";
+        currentFocus = -1;
+      }
+
+      function renderSuggestions(items) {
+        if (!Array.isArray(items) || !items.length) {
+          hideSuggestions();
+          return;
+        }
+
+        box.innerHTML = "";
+        items.forEach(function (item, index) {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "search-suggest-item";
+          button.setAttribute("role", "option");
+          button.setAttribute("data-index", String(index));
+          button.textContent = item;
+          button.addEventListener("click", function () {
+            input.value = item;
+            hideSuggestions();
+          });
+          box.appendChild(button);
+        });
+
+        box.classList.remove("hidden");
+      }
+
+      async function fetchSuggestions(prefix) {
+        try {
+          const response = await fetch("/advisor/keyword-suggest", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+              prefix: prefix,
+              product_type: productType === "all" ? "" : productType,
+              language: "vi",
+              limit: 6,
+            }),
+          });
+          const payload = await response.json();
+          renderSuggestions(payload.results || []);
+        } catch (error) {
+          hideSuggestions();
+        }
+      }
+
+      input.addEventListener("input", function () {
+        const prefix = input.value.trim();
+        if (timer) {
+          clearTimeout(timer);
+        }
+        if (prefix.length < 2) {
+          hideSuggestions();
+          return;
+        }
+        timer = setTimeout(function () {
+          fetchSuggestions(prefix);
+        }, 220);
+      });
+
+      input.addEventListener("keydown", function (event) {
+        const items = Array.from(box.querySelectorAll(".search-suggest-item"));
+        if (!items.length || box.classList.contains("hidden")) {
+          return;
+        }
+
+        if (event.key === "ArrowDown") {
+          event.preventDefault();
+          currentFocus = (currentFocus + 1) % items.length;
+        } else if (event.key === "ArrowUp") {
+          event.preventDefault();
+          currentFocus = (currentFocus - 1 + items.length) % items.length;
+        } else if (event.key === "Enter" && currentFocus >= 0) {
+          event.preventDefault();
+          input.value = items[currentFocus].textContent || "";
+          hideSuggestions();
+          return;
+        } else if (event.key === "Escape") {
+          hideSuggestions();
+          return;
+        } else {
+          return;
+        }
+
+        items.forEach(function (item, index) {
+          item.classList.toggle("active", index === currentFocus);
+        });
+      });
+
+      document.addEventListener("click", function (event) {
+        if (!box.contains(event.target) && event.target !== input) {
+          hideSuggestions();
+        }
+      });
+    })();
+
+    // Header search bar — AI semantic suggest
+    (function () {
+      const input = document.getElementById("header-search-input");
+      const box = document.getElementById("header-search-suggest-box");
+      if (!input || !box) return;
+
+      let timer = null;
+
+      function hideSuggestions() {
+        box.classList.add("hidden");
+        box.innerHTML = "";
+      }
+
+      function renderSuggestions(items) {
+        if (!Array.isArray(items) || !items.length) { hideSuggestions(); return; }
+        box.innerHTML = "";
+        items.forEach(function (item) {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "search-suggest-item semantic-suggest-item";
+          const title = document.createElement("span");
+          title.className = "semantic-suggest-title";
+          title.textContent = item.name || "Sản phẩm";
+          const meta = document.createElement("span");
+          meta.className = "semantic-suggest-meta";
+          meta.textContent = (item.brand || "TechStore") + " \u2022 " + (item.product_type || "").toUpperCase();
+          button.appendChild(title);
+          button.appendChild(meta);
+          button.addEventListener("click", function () {
+            window.location.href = "/products/" + (item.product_type || "computer") + "/" + item.id;
+          });
+          box.appendChild(button);
+        });
+        box.classList.remove("hidden");
+      }
+
+      async function fetchSuggestions(query) {
+        try {
+          const res = await fetch("/advisor/semantic-search", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({query: query, language: "vi", limit: 6}),
+          });
+          const payload = await res.json();
+          renderSuggestions(payload.results || []);
+        } catch (e) { hideSuggestions(); }
+      }
+
+      input.addEventListener("input", function () {
+        const query = input.value.trim();
+        clearTimeout(timer);
+        if (query.length < 2) { hideSuggestions(); return; }
+        timer = setTimeout(function () { fetchSuggestions(query); }, 220);
+      });
+
+      document.addEventListener("click", function (event) {
+        if (!box.contains(event.target) && event.target !== input) hideSuggestions();
+      });
+    })();
+  </script>
+</body>
+</html>

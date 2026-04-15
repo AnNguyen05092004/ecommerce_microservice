@@ -1,0 +1,93 @@
+{% extends "store/staff/base.html" %}
+
+{% block title %}AI Metrics - Staff{% endblock %}
+{% block page_title %}AI Metrics Dashboard{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+  <span>Trang chu</span>
+  <span>/</span>
+  <strong>AI Metrics</strong>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-blue"><i data-lucide="activity"></i></div>
+    <div class="stat-content">
+      <h3>p95 Chat Latency</h3>
+      <div class="stat-value">{{ p95_chat_latency }} ms</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-blue"><i data-lucide="timer"></i></div>
+    <div class="stat-content">
+      <h3>p95 Recommend Latency</h3>
+      <div class="stat-value">{{ p95_recommend_latency }} ms</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-blue"><i data-lucide="alert-triangle"></i></div>
+    <div class="stat-content">
+      <h3>Error Rate</h3>
+      <div class="stat-value">{{ error_rate }}%</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-blue"><i data-lucide="shield-check"></i></div>
+    <div class="stat-content">
+      <h3>Fallback Count</h3>
+      <div class="stat-value">{{ fallback_total }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="margin-top: 16px;">
+  <div class="card-title">Model va service status</div>
+  <table>
+    <tbody>
+      <tr>
+        <td>Health status</td>
+        <td><strong>{{ health_status }}</strong></td>
+      </tr>
+      <tr>
+        <td>LLM provider</td>
+        <td>{{ llm_provider }}</td>
+      </tr>
+      <tr>
+        <td>LLM model</td>
+        <td>{{ llm_model }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="card" style="margin-top: 16px;">
+  <div class="card-title">Last 10 events (chat/recommendation)</div>
+  {% if events %}
+  <table>
+    <thead>
+      <tr>
+        <th>Timestamp</th>
+        <th>Status</th>
+        <th>Total ms</th>
+        <th>Retrieval ms</th>
+        <th>Generation ms</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in events %}
+      <tr>
+        <td>{{ item.timestamp }}</td>
+        <td>{{ item.status }}</td>
+        <td>{{ item.total_ms }}</td>
+        <td>{{ item.retrieval_ms }}</td>
+        <td>{{ item.generation_ms }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>Chua co event nao trong khung 1h.</p>
+  {% endif %}
+</div>
+{% endblock %}

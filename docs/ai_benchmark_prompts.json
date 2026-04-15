@@ -1,0 +1,149 @@
+{
+    "chat_prompts": [
+        {
+            "language": "vi",
+            "message": "Tu van laptop cho sinh vien IT duoi 25 trieu",
+            "expected_doc_keywords": [
+                "laptop",
+                "guide",
+                "huong dan"
+            ],
+            "expected_sources": [
+                "guide:laptop"
+            ],
+            "expected_answer_keywords": [
+                "laptop",
+                "cpu",
+                "ram",
+                "ssd"
+            ],
+            "expected_answer_phrases": [
+                "ram",
+                "ssd"
+            ]
+        },
+        {
+            "language": "vi",
+            "message": "Dien thoai nao pin trau cho choi game",
+            "expected_doc_keywords": [
+                "dien thoai",
+                "mobile",
+                "guide"
+            ],
+            "expected_sources": [
+                "guide:mobile"
+            ],
+            "expected_answer_keywords": [
+                "battery",
+                "camera",
+                "mobile",
+                "game"
+            ],
+            "expected_answer_phrases": [
+                "battery",
+                "camera"
+            ]
+        },
+        {
+            "language": "en",
+            "message": "What is your shipping policy for my order?",
+            "expected_doc_keywords": [
+                "shipping",
+                "policy"
+            ],
+            "expected_sources": [
+                "policy:shipping"
+            ],
+            "expected_answer_keywords": [
+                "processed",
+                "delivery",
+                "stock",
+                "shipping address"
+            ],
+            "expected_answer_phrases": [
+                "delivery time",
+                "shipping address"
+            ]
+        },
+        {
+            "language": "en",
+            "message": "Can I return clothes after 14 days?",
+            "expected_doc_keywords": [
+                "return",
+                "refund",
+                "policy"
+            ],
+            "expected_sources": [
+                "policy:return"
+            ],
+            "expected_answer_keywords": [
+                "return",
+                "invoice",
+                "product",
+                "policy"
+            ],
+            "expected_answer_phrases": [
+                "return",
+                "invoice"
+            ]
+        },
+        {
+            "language": "vi",
+            "message": "Hom nay co khuyen mai nao cho laptop khong",
+            "expected_doc_keywords": [
+                "khuyen mai",
+                "promotion",
+                "laptop"
+            ],
+            "expected_sources": [
+                "guide:laptop"
+            ],
+            "expected_answer_keywords": [
+                "laptop",
+                "promotion",
+                "price",
+                "recommend"
+            ],
+            "expected_answer_phrases": [
+                "promotion",
+                "laptop"
+            ]
+        },
+        {
+            "language": "en",
+            "message": "Recommend a premium ultrabook for office work",
+            "expected_doc_keywords": [
+                "ultrabook",
+                "laptop",
+                "guide"
+            ],
+            "expected_sources": [
+                "guide:laptop"
+            ],
+            "expected_answer_keywords": [
+                "ultrabook",
+                "office",
+                "laptop",
+                "display"
+            ],
+            "expected_answer_phrases": [
+                "ultrabook",
+                "office"
+            ]
+        }
+    ],
+    "recommendation_cases": [
+        {
+            "limit": 4
+        },
+        {
+            "limit": 6
+        },
+        {
+            "limit": 8
+        },
+        {
+            "limit": 5
+        }
+    ]
+}

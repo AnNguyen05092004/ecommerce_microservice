@@ -1,0 +1,626 @@
+# ============================================
+# API Gateway — OpenAPI 3.0 Specification
+# ============================================
+openapi: 3.0.3
+info:
+  title: TechStore API Gateway
+  description: |
+    API Gateway trung tâm cho hệ thống TechStore.
+    Chức năng: routing requests, JWT verification, forwarding đến các microservices.
+    
+    Gateway KHÔNG có database riêng. Tất cả request đều được forward đến service tương ứng.
+  version: 1.0.0
+
+servers:
+  - url: http://gateway:8000
+    description: Docker internal
+  - url: http://localhost:8000
+    description: Local development
+
+tags:
+  - name: Health
+    description: Health check
+  - name: Staff Service
+    description: Routes tới Staff Service
+  - name: Customer Service
+    description: Routes tới Customer Service
+  - name: Computer Service
+    description: Routes tới Computer Service
+  - name: Mobile Service
+    description: Routes tới Mobile Service
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Gateway health check
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Gateway is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  services:
+                    type: object
+                    description: Trạng thái các downstream services
+                    properties:
+                      staff_service:
+                        type: string
+                        example: ok
+                      customer_service:
+                        type: string
+                        example: ok
+                      computer_service:
+                        type: string
+                        example: ok
+                      mobile_service:
+                        type: string
+                        example: ok
+
+  # ─── STAFF SERVICE ROUTES ───────────────────────────
+  /api/staff-service/auth/login/:
+    post:
+      tags: [Staff Service]
+      summary: "[→ Staff Service] Đăng nhập staff/admin"
+      operationId: staffLogin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+                  format: password
+      responses:
+        '200':
+          description: Forward response từ Staff Service
+        '401':
+          description: Sai thông tin đăng nhập
+
+  /api/staff-service/staff/:
+    get:
+      tags: [Staff Service]
+      summary: "[→ Staff Service] Danh sách nhân viên"
+      operationId: listStaff
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: role
+          in: query
+          schema:
+            type: string
+            enum: [staff, admin]
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Forward response từ Staff Service
+        '401':
+          description: Chưa xác thực
+        '403':
+          description: Không có quyền
+
+    post:
+      tags: [Staff Service]
+      summary: "[→ Staff Service] Tạo nhân viên mới (Admin only)"
+      operationId: createStaff
+      security:
+        - BearerAuth: []
+      responses:
+        '201':
+          description: Forward response từ Staff Service
+
+  /api/staff-service/staff/{id}/:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      tags: [Staff Service]
+      summary: "[→ Staff Service] Chi tiết nhân viên"
+      operationId: getStaff
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Forward response từ Staff Service
+    put:
+      tags: [Staff Service]
+      summary: "[→ Staff Service] Cập nhật nhân viên"
+      operationId: updateStaff
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Forward response từ Staff Service
+    delete:
+      tags: [Staff Service]
+      summary: "[→ Staff Service] Xoá nhân viên"
+      operationId: deleteStaff
+      security:
+        - BearerAuth: []
+      responses:
+        '204':
+          description: Forward response từ Staff Service
+
+  # ─── CUSTOMER SERVICE ROUTES ────────────────────────
+  /api/customer-service/auth/register/:
+    post:
+      tags: [Customer Service]
+      summary: "[→ Customer Service] Đăng ký khách hàng"
+      operationId: customerRegister
+      responses:
+        '201':
+          description: Forward response từ Customer Service
+
+  /api/customer-service/auth/login/:
+    post:
+      tags: [Customer Service]
+      summary: "[→ Customer Service] Đăng nhập khách hàng"
+      operationId: customerLogin
+      responses:
+        '200':
+          description: Forward response từ Customer Service
+
+  /api/customer-service/customers/me/:
+    get:
+      tags: [Customer Service]
+      summary: "[→ Customer Service] Thông tin cá nhân"
+      operationId: getMyProfile
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Forward response từ Customer Service
+    put:
+      tags: [Customer Service]
+      summary: "[→ Customer Service] Cập nhật thông tin cá nhân"
+      operationId: updateMyProfile
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Forward response từ Customer Service
+
+  /api/customer-service/cart/:
+    get:
+      tags: [Customer Service]
+      summary: "[→ Customer Service] Xem giỏ hàng"
+      operationId: getCart
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Forward response từ Customer Service
+
+  /api/customer-service/cart/items/:
+    post:
+      tags: [Customer Service]
+      summary: "[→ Customer Service] Thêm sản phẩm vào giỏ"
+      operationId: addToCart
+      security:
+        - BearerAuth: []
+      responses:
+        '201':
+          description: Forward response từ Customer Service
+
+  /api/customer-service/cart/items/{id}/:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    put:
+      tags: [Customer Service]
+      summary: "[→ Customer Service] Cập nhật số lượng trong giỏ"
+      operationId: updateCartItem
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Forward response từ Customer Service
+    delete:
+      tags: [Customer Service]
+      summary: "[→ Customer Service] Xoá sản phẩm khỏi giỏ"
+      operationId: removeCartItem
+      security:
+        - BearerAuth: []
+      responses:
+        '204':
+          description: Forward response từ Customer Service
+
+  /api/customer-service/orders/:
+    get:
+      tags: [Customer Service]
+      summary: "[→ Customer Service] Danh sách đơn hàng"
+      operationId: listOrders
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, confirmed, shipping, completed, cancelled]
+      responses:
+        '200':
+          description: Forward response từ Customer Service
+    post:
+      tags: [Customer Service]
+      summary: "[→ Customer Service] Tạo đơn hàng (Checkout)"
+      operationId: createOrder
+      security:
+        - BearerAuth: []
+      responses:
+        '201':
+          description: Forward response từ Customer Service
+
+  /api/customer-service/orders/{id}/:
+    get:
+      tags: [Customer Service]
+      summary: "[→ Customer Service] Chi tiết đơn hàng"
+      operationId: getOrder
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Forward response từ Customer Service
+
+  /api/customer-service/orders/{id}/status/:
+    patch:
+      tags: [Customer Service]
+      summary: "[→ Customer Service] Cập nhật trạng thái đơn hàng (Staff only)"
+      operationId: updateOrderStatus
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Forward response từ Customer Service
+
+  /api/customer-service/reviews/:
+    get:
+      tags: [Customer Service]
+      summary: "[→ Customer Service] Đánh giá theo sản phẩm"
+      operationId: listReviews
+      parameters:
+        - name: product_id
+          in: query
+          schema:
+            type: integer
+        - name: product_type
+          in: query
+          schema:
+            type: string
+            enum: [computer, mobile]
+      responses:
+        '200':
+          description: Forward response từ Customer Service
+    post:
+      tags: [Customer Service]
+      summary: "[→ Customer Service] Tạo đánh giá (Customer only)"
+      operationId: createReview
+      security:
+        - BearerAuth: []
+      responses:
+        '201':
+          description: Forward response từ Customer Service
+
+  # ─── COMPUTER SERVICE ROUTES ────────────────────────
+  /api/computer-service/computers/:
+    get:
+      tags: [Computer Service]
+      summary: "[→ Computer Service] Danh sách máy tính (Public)"
+      operationId: listComputers
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: brand
+          in: query
+          schema:
+            type: string
+        - name: category
+          in: query
+          schema:
+            type: integer
+        - name: price_min
+          in: query
+          schema:
+            type: number
+        - name: price_max
+          in: query
+          schema:
+            type: number
+      responses:
+        '200':
+          description: Forward response từ Computer Service
+    post:
+      tags: [Computer Service]
+      summary: "[→ Computer Service] Thêm máy tính (Staff only)"
+      operationId: createComputer
+      security:
+        - BearerAuth: []
+      responses:
+        '201':
+          description: Forward response từ Computer Service
+
+  /api/computer-service/computers/{id}/:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      tags: [Computer Service]
+      summary: "[→ Computer Service] Chi tiết máy tính (Public)"
+      operationId: getComputer
+      responses:
+        '200':
+          description: Forward response từ Computer Service
+    put:
+      tags: [Computer Service]
+      summary: "[→ Computer Service] Cập nhật máy tính (Staff only)"
+      operationId: updateComputer
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Forward response từ Computer Service
+    delete:
+      tags: [Computer Service]
+      summary: "[→ Computer Service] Xoá máy tính (Staff only)"
+      operationId: deleteComputer
+      security:
+        - BearerAuth: []
+      responses:
+        '204':
+          description: Forward response từ Computer Service
+
+  /api/computer-service/computers/{id}/stock/:
+    patch:
+      tags: [Computer Service]
+      summary: "[→ Computer Service] Cập nhật tồn kho"
+      operationId: updateComputerStock
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Forward response từ Computer Service
+
+  /api/computer-service/categories/:
+    get:
+      tags: [Computer Service]
+      summary: "[→ Computer Service] Danh mục máy tính"
+      operationId: listComputerCategories
+      responses:
+        '200':
+          description: Forward response từ Computer Service
+    post:
+      tags: [Computer Service]
+      summary: "[→ Computer Service] Tạo danh mục (Staff only)"
+      operationId: createComputerCategory
+      security:
+        - BearerAuth: []
+      responses:
+        '201':
+          description: Forward response từ Computer Service
+
+  /api/computer-service/categories/{id}/:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    put:
+      tags: [Computer Service]
+      summary: "[→ Computer Service] Cập nhật danh mục"
+      operationId: updateComputerCategory
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Forward response từ Computer Service
+    delete:
+      tags: [Computer Service]
+      summary: "[→ Computer Service] Xoá danh mục"
+      operationId: deleteComputerCategory
+      security:
+        - BearerAuth: []
+      responses:
+        '204':
+          description: Forward response từ Computer Service
+
+  # ─── MOBILE SERVICE ROUTES ─────────────────────────
+  /api/mobile-service/mobiles/:
+    get:
+      tags: [Mobile Service]
+      summary: "[→ Mobile Service] Danh sách điện thoại (Public)"
+      operationId: listMobiles
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: brand
+          in: query
+          schema:
+            type: string
+        - name: category
+          in: query
+          schema:
+            type: integer
+        - name: price_min
+          in: query
+          schema:
+            type: number
+        - name: price_max
+          in: query
+          schema:
+            type: number
+      responses:
+        '200':
+          description: Forward response từ Mobile Service
+    post:
+      tags: [Mobile Service]
+      summary: "[→ Mobile Service] Thêm điện thoại (Staff only)"
+      operationId: createMobile
+      security:
+        - BearerAuth: []
+      responses:
+        '201':
+          description: Forward response từ Mobile Service
+
+  /api/mobile-service/mobiles/{id}/:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      tags: [Mobile Service]
+      summary: "[→ Mobile Service] Chi tiết điện thoại (Public)"
+      operationId: getMobile
+      responses:
+        '200':
+          description: Forward response từ Mobile Service
+    put:
+      tags: [Mobile Service]
+      summary: "[→ Mobile Service] Cập nhật điện thoại (Staff only)"
+      operationId: updateMobile
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Forward response từ Mobile Service
+    delete:
+      tags: [Mobile Service]
+      summary: "[→ Mobile Service] Xoá điện thoại (Staff only)"
+      operationId: deleteMobile
+      security:
+        - BearerAuth: []
+      responses:
+        '204':
+          description: Forward response từ Mobile Service
+
+  /api/mobile-service/mobiles/{id}/stock/:
+    patch:
+      tags: [Mobile Service]
+      summary: "[→ Mobile Service] Cập nhật tồn kho"
+      operationId: updateMobileStock
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Forward response từ Mobile Service
+
+  /api/mobile-service/categories/:
+    get:
+      tags: [Mobile Service]
+      summary: "[→ Mobile Service] Danh mục điện thoại"
+      operationId: listMobileCategories
+      responses:
+        '200':
+          description: Forward response từ Mobile Service
+    post:
+      tags: [Mobile Service]
+      summary: "[→ Mobile Service] Tạo danh mục (Staff only)"
+      operationId: createMobileCategory
+      security:
+        - BearerAuth: []
+      responses:
+        '201':
+          description: Forward response từ Mobile Service
+
+  /api/mobile-service/categories/{id}/:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    put:
+      tags: [Mobile Service]
+      summary: "[→ Mobile Service] Cập nhật danh mục"
+      operationId: updateMobileCategory
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Forward response từ Mobile Service
+    delete:
+      tags: [Mobile Service]
+      summary: "[→ Mobile Service] Xoá danh mục"
+      operationId: deleteMobileCategory
+      security:
+        - BearerAuth: []
+      responses:
+        '204':
+          description: Forward response từ Mobile Service
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT token lấy từ Staff Service hoặc Customer Service.
+        Gateway sẽ verify token trước khi forward request.
+
+  schemas:
+    GatewayError:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Service unavailable"
+        service:
+          type: string
+          example: "computer-service"
+        detail:
+          type: string
+          example: "Could not connect to downstream service"

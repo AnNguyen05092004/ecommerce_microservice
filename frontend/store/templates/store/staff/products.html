@@ -1,0 +1,515 @@
+{% extends "store/staff/base.html" %}
+
+{% block title %}Quản lý sản phẩm - {{ product_type_vn }}{% endblock %}
+
+{% block page_title %}Quản lý {{ product_type_vn }}{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="{% url 'staff-dashboard' %}">Bảng điều khiển</a>
+    <span>/</span>
+    <span>{{ product_type_vn }}</span>
+</div>
+
+<div class="card">
+    <div class="card-title">Bộ lọc {{ product_type_vn }}</div>
+    <form method="get" style="display:grid; gap: 12px;">
+        <div class="form-row">
+            <div class="form-group">
+                <label>Tìm kiếm</label>
+                <input type="text" name="search" value="{{ selected_search }}" placeholder="Tên sản phẩm...">
+            </div>
+            <div class="form-group">
+                <label>Thương hiệu</label>
+                <select name="brand">
+                    <option value="">Tất cả</option>
+                    {% for brand in brands %}
+                    <option value="{{ brand }}" {% if selected_brand == brand %}selected{% endif %}>{{ brand }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Danh mục</label>
+                <select name="category">
+                    <option value="">Tất cả</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}" {% if selected_category == category.id|stringformat:'s' %}selected{% endif %}>{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>Giá từ</label>
+                <input type="number" min="0" name="price_min" value="{{ selected_price_min }}">
+            </div>
+            <div class="form-group">
+                <label>Giá đến</label>
+                <input type="number" min="0" name="price_max" value="{{ selected_price_max }}">
+            </div>
+            <div class="form-group">
+                <label>Tồn kho từ</label>
+                <input type="number" min="0" name="stock_min" value="{{ selected_stock_min }}">
+            </div>
+            <div class="form-group">
+                <label>Tồn kho đến</label>
+                <input type="number" min="0" name="stock_max" value="{{ selected_stock_max }}">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>Sắp xếp</label>
+                <select name="sort">
+                    <option value="newest" {% if selected_sort == 'newest' %}selected{% endif %}>Mới nhất</option>
+                    <option value="oldest" {% if selected_sort == 'oldest' %}selected{% endif %}>Cũ nhất</option>
+                    <option value="price_asc" {% if selected_sort == 'price_asc' %}selected{% endif %}>Giá tăng dần</option>
+                    <option value="price_desc" {% if selected_sort == 'price_desc' %}selected{% endif %}>Giá giảm dần</option>
+                    <option value="name_asc" {% if selected_sort == 'name_asc' %}selected{% endif %}>Tên A-Z</option>
+                    <option value="name_desc" {% if selected_sort == 'name_desc' %}selected{% endif %}>Tên Z-A</option>
+                    <option value="stock_asc" {% if selected_sort == 'stock_asc' %}selected{% endif %}>Tồn kho tăng dần</option>
+                    <option value="stock_desc" {% if selected_sort == 'stock_desc' %}selected{% endif %}>Tồn kho giảm dần</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="display:flex; gap:8px;">
+            <button type="submit" class="btn btn-secondary"><i data-lucide="filter"></i> Áp dụng</button>
+            <a class="btn btn-secondary" href="{{ staff_products_path|default:'/staff/products/computer' }}">Reset</a>
+        </div>
+    </form>
+</div>
+
+<!-- Add Product Button -->
+<button onclick="toggleForm()" class="btn btn-primary" style="margin-bottom: 20px;">
+    <i data-lucide="plus"></i> Thêm {{ product_type_vn }}
+</button>
+
+<!-- Add Product Form (Hidden by default) -->
+<div id="addProductForm" style="display: none;">
+    <div class="card">
+        <div class="card-title">Thêm {{ product_type_vn }} mới</div>
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add">
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Tên sản phẩm *</label>
+                    <input type="text" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label>Thương hiệu *</label>
+                    <input type="text" name="brand" required>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Giá (VND) *</label>
+                    <input type="number" name="price" required step="1" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Số lượng *</label>
+                    <input type="number" name="stock" required step="1" min="0">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Danh mục *</label>
+                <select name="category" required>
+                    <option value="">-- Chọn danh mục --</option>
+                    {% for category in categories %}
+                        <option value="{{ category.id }}">{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Mô tả</label>
+                <textarea name="description"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>URL Ảnh</label>
+                <input type="url" name="image" placeholder="https://images.unsplash.com/...">
+            </div>
+
+            <!-- Specs based on product type -->
+            {% if product_type == 'mobile' %}
+                <div style="background-color: var(--bg-light); padding: 16px; border-radius: 6px; margin-bottom: 16px;">
+                    <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px;">Thông số kỹ thuật - Điện thoại</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Kích thước màn hình</label>
+                            <input type="text" name="screen_size" placeholder="e.g., 6.7 inch">
+                        </div>
+                        <div class="form-group">
+                            <label>Pin (mAh)</label>
+                            <input type="text" name="battery" placeholder="e.g., 4422">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Camera</label>
+                            <input type="text" name="camera" placeholder="e.g., 48MP">
+                        </div>
+                        <div class="form-group">
+                            <label>Storage</label>
+                            <input type="text" name="storage" placeholder="e.g., 256GB">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>RAM</label>
+                            <input type="text" name="ram" placeholder="e.g., 8GB">
+                        </div>
+                        <div class="form-group">
+                            <label>OS</label>
+                            <input type="text" name="os" placeholder="e.g., iOS, Android">
+                        </div>
+                    </div>
+                </div>
+            {% elif product_type == 'clothes' %}
+                <div style="background-color: var(--bg-light); padding: 16px; border-radius: 6px; margin-bottom: 16px;">
+                    <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px;">Thông số - Quần áo</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Giới tính</label>
+                            <select name="gender">
+                                <option value="unisex">Unisex</option>
+                                <option value="male">Nam</option>
+                                <option value="female">Nữ</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Size</label>
+                            <select name="size">
+                                <option value="">-- Chọn size --</option>
+                                <option value="XS">XS</option>
+                                <option value="S">S</option>
+                                <option value="M">M</option>
+                                <option value="L">L</option>
+                                <option value="XL">XL</option>
+                                <option value="XXL">XXL</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Màu sắc</label>
+                            <input type="text" name="color" placeholder="e.g., Trắng, Đen">
+                        </div>
+                        <div class="form-group">
+                            <label>Chất liệu</label>
+                            <input type="text" name="material" placeholder="e.g., Cotton 100%">
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div style="background-color: var(--bg-light); padding: 16px; border-radius: 6px; margin-bottom: 16px;">
+                    <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px;">Thông số kỹ thuật - Laptop</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>CPU</label>
+                            <input type="text" name="cpu" placeholder="e.g., Apple M3 Max">
+                        </div>
+                        <div class="form-group">
+                            <label>RAM</label>
+                            <input type="text" name="ram" placeholder="e.g., 32GB">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Storage</label>
+                            <input type="text" name="storage" placeholder="e.g., 1TB SSD">
+                        </div>
+                        <div class="form-group">
+                            <label>GPU</label>
+                            <input type="text" name="gpu" placeholder="e.g., RTX 4090">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Kích thước màn hình</label>
+                            <input type="text" name="screen_size" placeholder="e.g., 16 inch">
+                        </div>
+                        <div class="form-group">
+                            <label>OS</label>
+                            <input type="text" name="os" placeholder="e.g., macOS, Windows 11">
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <div style="display: flex; gap: 8px;">
+                <button type="submit" class="btn btn-primary">
+                    <i data-lucide="save"></i> Lưu sản phẩm
+                </button>
+                <button type="button" onclick="toggleForm()" class="btn btn-secondary">
+                    <i data-lucide="x"></i> Hủy
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if edit_product %}
+<div class="card">
+    <div class="card-title">Cập nhật {{ product_type_vn }} #{{ edit_product.id }}</div>
+    <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="update">
+        <input type="hidden" name="product_id" value="{{ edit_product.id }}">
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>Tên sản phẩm *</label>
+                <input type="text" name="name" value="{{ edit_product.name }}" required>
+            </div>
+            <div class="form-group">
+                <label>Thương hiệu *</label>
+                <input type="text" name="brand" value="{{ edit_product.brand }}" required>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>Giá (VND) *</label>
+                <input type="number" name="price" value="{{ edit_product.price|floatformat:0 }}" required step="1" min="0">
+            </div>
+            <div class="form-group">
+                <label>Số lượng *</label>
+                <input type="number" name="stock" value="{{ edit_product.stock }}" required step="1" min="0">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Danh mục *</label>
+            <select name="category" required>
+                <option value="">-- Chọn danh mục --</option>
+                {% for category in categories %}
+                    <option value="{{ category.id }}" {% if edit_product.category and edit_product.category.id == category.id %}selected{% endif %}>{{ category.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Mô tả</label>
+            <textarea name="description">{{ edit_product.description }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label>URL Ảnh</label>
+            <input type="url" name="image" value="{{ edit_product.image }}">
+        </div>
+
+        {% if product_type == 'mobile' %}
+            <div style="background-color: var(--bg-light); padding: 16px; border-radius: 6px; margin-bottom: 16px;">
+                <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px;">Thông số kỹ thuật - Điện thoại</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Kích thước màn hình</label>
+                        <input type="text" name="screen_size" value="{{ edit_product.specs.screen_size }}">
+                    </div>
+                    <div class="form-group">
+                        <label>Pin (mAh)</label>
+                        <input type="text" name="battery" value="{{ edit_product.specs.battery }}">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Camera</label>
+                        <input type="text" name="camera" value="{{ edit_product.specs.camera }}">
+                    </div>
+                    <div class="form-group">
+                        <label>Storage</label>
+                        <input type="text" name="storage" value="{{ edit_product.specs.storage }}">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>RAM</label>
+                        <input type="text" name="ram" value="{{ edit_product.specs.ram }}">
+                    </div>
+                    <div class="form-group">
+                        <label>OS</label>
+                        <input type="text" name="os" value="{{ edit_product.specs.os }}">
+                    </div>
+                </div>
+            </div>
+        {% elif product_type == 'clothes' %}
+            <div style="background-color: var(--bg-light); padding: 16px; border-radius: 6px; margin-bottom: 16px;">
+                <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px;">Thông số - Quần áo</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Giới tính</label>
+                        <select name="gender">
+                            <option value="unisex" {% if edit_product.gender == 'unisex' %}selected{% endif %}>Unisex</option>
+                            <option value="male" {% if edit_product.gender == 'male' %}selected{% endif %}>Nam</option>
+                            <option value="female" {% if edit_product.gender == 'female' %}selected{% endif %}>Nữ</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Size</label>
+                        <select name="size">
+                            <option value="">-- Chọn size --</option>
+                            <option value="XS" {% if edit_product.specs.size == 'XS' %}selected{% endif %}>XS</option>
+                            <option value="S" {% if edit_product.specs.size == 'S' %}selected{% endif %}>S</option>
+                            <option value="M" {% if edit_product.specs.size == 'M' %}selected{% endif %}>M</option>
+                            <option value="L" {% if edit_product.specs.size == 'L' %}selected{% endif %}>L</option>
+                            <option value="XL" {% if edit_product.specs.size == 'XL' %}selected{% endif %}>XL</option>
+                            <option value="XXL" {% if edit_product.specs.size == 'XXL' %}selected{% endif %}>XXL</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Màu sắc</label>
+                        <input type="text" name="color" value="{{ edit_product.specs.color }}">
+                    </div>
+                    <div class="form-group">
+                        <label>Chất liệu</label>
+                        <input type="text" name="material" value="{{ edit_product.specs.material }}">
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div style="background-color: var(--bg-light); padding: 16px; border-radius: 6px; margin-bottom: 16px;">
+                <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px;">Thông số kỹ thuật - Laptop</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>CPU</label>
+                        <input type="text" name="cpu" value="{{ edit_product.specs.cpu }}">
+                    </div>
+                    <div class="form-group">
+                        <label>RAM</label>
+                        <input type="text" name="ram" value="{{ edit_product.specs.ram }}">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Storage</label>
+                        <input type="text" name="storage" value="{{ edit_product.specs.storage }}">
+                    </div>
+                    <div class="form-group">
+                        <label>GPU</label>
+                        <input type="text" name="gpu" value="{{ edit_product.specs.gpu }}">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Kích thước màn hình</label>
+                        <input type="text" name="screen_size" value="{{ edit_product.specs.screen_size }}">
+                    </div>
+                    <div class="form-group">
+                        <label>OS</label>
+                        <input type="text" name="os" value="{{ edit_product.specs.os }}">
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <div style="display: flex; gap: 8px;">
+            <button type="submit" class="btn btn-primary">
+                <i data-lucide="save"></i> Lưu cập nhật
+            </button>
+            <a href="{{ staff_products_path|default:'/staff/products/computer' }}" class="btn btn-secondary"><i data-lucide="x"></i> Hủy</a>
+        </div>
+    </form>
+</div>
+{% endif %}
+
+<!-- Products List -->
+<div class="card">
+    <div class="card-title">Danh sách {{ product_type_vn }} ({{ products|length }})</div>
+    
+    {% if products %}
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Tên sản phẩm</th>
+                    <th>Thương hiệu</th>
+                    <th>Giá</th>
+                    <th>Số lượng</th>
+                    <th>Danh mục</th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                <tr>
+                    <td><strong>#{{ product.id }}</strong></td>
+                    <td>
+                        <strong>{{ product.name|truncatewords:5 }}</strong>
+                    </td>
+                    <td>{{ product.brand }}</td>
+                    <td class="text-right">
+                        {% if product.price %}
+                            {{ product.price|floatformat:0 }}₫
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                    <td>
+                        <form method="POST" class="stock-inline-form">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="quick_stock">
+                            <input type="hidden" name="product_id" value="{{ product.id }}">
+                            <input
+                                type="number"
+                                name="stock"
+                                value="{{ product.stock }}"
+                                min="0"
+                                step="1"
+                                class="stock-inline-input"
+                            >
+                            <button type="submit" class="btn btn-secondary btn-small stock-inline-submit">
+                                <i data-lucide="save"></i> Cập nhật
+                            </button>
+                        </form>
+                    </td>
+                    <td>
+                        {% if product.category %}
+                            {{ product.category.name }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="row-actions">
+                            <a class="btn btn-secondary btn-small row-action-btn" href="{{ staff_products_path|default:'/staff/products/computer' }}?edit={{ product.id }}">
+                                <i data-lucide="edit"></i> Sửa
+                            </a>
+
+                            <form method="POST" onsubmit="return confirm('Bạn có chắc muốn xóa sản phẩm này?');" style="margin: 0;">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="delete">
+                                <input type="hidden" name="product_id" value="{{ product.id }}">
+                                <button type="submit" class="btn btn-danger btn-small row-action-btn">
+                                    <i data-lucide="trash"></i> Xóa
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+            <i data-lucide="box" style="width: 50px; height: 50px; margin: 0 auto 12px;"></i>
+            <p>Chưa có {{ product_type_vn }} nào. Hãy thêm sản phẩm đầu tiên!</p>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+    function toggleForm() {
+        const form = document.getElementById('addProductForm');
+        form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    }
+</script>
+{% endblock %}

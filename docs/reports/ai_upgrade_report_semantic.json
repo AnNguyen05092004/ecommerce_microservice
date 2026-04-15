@@ -1,0 +1,56 @@
+{
+  "generated_at": "2026-04-06T16:13:23.277040+00:00",
+  "base_url": "http://localhost:8000",
+  "phase": "phase-semantic-check",
+  "version": "v2.5",
+  "chat": {
+    "sample_size": 6,
+    "success_count": 6,
+    "failure_count": 0,
+    "latency_ms": {
+      "min": 26.19,
+      "avg": 264.22,
+      "p50": 35.56,
+      "p95": 757.7,
+      "max": 785.53
+    },
+    "fallback_rate": 1.0,
+    "retrieval_relevance_at_k": 1.0,
+    "grounded_answer_rate": 1.0,
+    "citation_rate": 1.0,
+    "hallucination_proxy_rate": 0.0,
+    "evidence_grounded_rate": 0.8333,
+    "source_precision": 0.8333,
+    "semantic_keyword_recall": 0.5417,
+    "exact_phrase_hit_rate": 0.6667,
+    "combined_grounding_score": 0.7167,
+    "golden_set_size": 6,
+    "semantic_eval_size": 6,
+    "exact_eval_size": 6,
+    "recommendation_limit": 6,
+    "failures": []
+  },
+  "recommendations": {
+    "sample_size": 4,
+    "success_count": 4,
+    "failure_count": 0,
+    "non_empty_result_rate": 1.0,
+    "latency_ms": {
+      "min": 23.34,
+      "avg": 23.53,
+      "p50": 23.54,
+      "p95": 23.67,
+      "max": 23.69
+    },
+    "failures": []
+  },
+  "notes": [
+    "fallback_rate > 0 means cloud model was not used for some requests",
+    "retrieval_relevance_at_k is measured by keyword hit in returned context_documents",
+    "evidence_grounded_rate uses golden-set expected_sources; source_precision is precision@expected",
+    "semantic_keyword_recall measures expected-answer keyword coverage in generated answer",
+    "exact_phrase_hit_rate checks expected phrases for strict grounding",
+    "combined_grounding_score blends source recall and semantic recall",
+    "citation_rate/grounded_answer_rate are proxy metrics based on bracket presence"
+  ]
+}

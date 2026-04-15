@@ -1,0 +1,73 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ login_title }} | TechStore</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'store/css/site.css' %}" />
+</head>
+<body>
+  <div class="shipping-bar"><i data-lucide="shield-check"></i> Đăng nhập an toàn qua gateway</div>
+
+  <header class="main-header">
+    <a class="brand" href="/">TechStore</a>
+    <nav class="main-nav">
+      <a href="/"><i data-lucide="house"></i> Trang chủ</a>
+      <a href="/products"><i data-lucide="grid-2x2"></i> Sản phẩm</a>
+      {% if auth_user_type == 'customer' %}
+      <a href="/my-orders"><i data-lucide="receipt-text"></i> Đơn hàng của tôi</a>
+      {% endif %}
+      {% if auth_user_type == 'staff' %}
+      <a href="/staff/dashboard"><i data-lucide="layout-dashboard"></i> Dashboard Staff</a>
+      {% else %}
+      <a href="/login/customer"><i data-lucide="user"></i> Customer</a>
+      <a href="/login/staff"><i data-lucide="briefcase"></i> Staff</a>
+      {% endif %}
+      {% if auth_user_type %}
+      <a href="/logout"><i data-lucide="log-out"></i> Đăng xuất</a>
+      {% endif %}
+    </nav>
+    <a class="cart-btn" href="/cart" aria-label="Giỏ hàng">
+      <i data-lucide="shopping-cart"></i>
+      <span>{{ cart_count }}</span>
+    </a>
+  </header>
+
+  <main class="auth-wrap">
+    <section class="auth-card">
+      <h1>{{ login_title }}</h1>
+      <p class="auth-sub">Sử dụng tài khoản {{ api_hint }} để tiếp tục.</p>
+
+      {% if error %}
+      <div class="auth-error">{{ error }}</div>
+      {% endif %}
+
+      <form method="post" class="auth-form">
+        {% csrf_token %}
+        <label for="username">Username</label>
+        <input id="username" name="username" type="text" placeholder="Nhập username" required>
+
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" placeholder="Nhập password" required>
+
+        <button type="submit" class="btn btn-primary">Đăng nhập</button>
+      </form>
+
+      <p class="auth-switch">
+        {% if login_type == 'customer' %}
+        Đăng nhập staff? <a href="/login/staff">Chuyển sang Staff</a>
+        {% else %}
+        Đăng nhập customer? <a href="/login/customer">Chuyển sang Customer</a>
+        {% endif %}
+      </p>
+    </section>
+  </main>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>lucide.createIcons();</script>
+</body>
+</html>

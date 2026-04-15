@@ -1,0 +1,123 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Đơn hàng của tôi | TechStore</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'store/css/site.css' %}" />
+</head>
+<body>
+  <div class="shipping-bar"><i data-lucide="receipt-text"></i> Theo dõi đơn hàng và đánh giá sản phẩm</div>
+
+  <header class="main-header">
+    <a class="brand" href="/">TechStore</a>
+    <nav class="main-nav">
+      <a href="/"><i data-lucide="house"></i> Trang chủ</a>
+      <a href="/products"><i data-lucide="grid-2x2"></i> Sản phẩm</a>
+      <a href="/cart"><i data-lucide="shopping-cart"></i> Giỏ hàng</a>
+      <a href="/my-orders"><i data-lucide="receipt-text"></i> Đơn hàng của tôi</a>
+      {% if auth_user_type %}
+      <a href="/logout"><i data-lucide="log-out"></i> Đăng xuất</a>
+      {% endif %}
+    </nav>
+    <a class="cart-btn" href="/cart" aria-label="Giỏ hàng">
+      <i data-lucide="shopping-cart"></i>
+      <span>{{ cart_count }}</span>
+    </a>
+  </header>
+
+  <main class="products-layout" style="grid-template-columns: 280px 1fr;">
+    <aside class="filter-panel">
+      <h2><i data-lucide="filter"></i> Lọc đơn hàng</h2>
+      <form method="get" action="/my-orders" class="filter-form">
+        <label>Trạng thái</label>
+        <select name="status">
+          <option value="" {% if not selected_status %}selected{% endif %}>Tất cả</option>
+          <option value="pending" {% if selected_status == 'pending' %}selected{% endif %}>Chờ xác nhận</option>
+          <option value="confirmed" {% if selected_status == 'confirmed' %}selected{% endif %}>Đã xác nhận</option>
+          <option value="shipping" {% if selected_status == 'shipping' %}selected{% endif %}>Đang giao</option>
+          <option value="completed" {% if selected_status == 'completed' %}selected{% endif %}>Hoàn thành</option>
+          <option value="cancelled" {% if selected_status == 'cancelled' %}selected{% endif %}>Đã hủy</option>
+        </select>
+        <button type="submit" class="btn btn-primary">Áp dụng</button>
+      </form>
+    </aside>
+
+    <section class="products-panel">
+      <div class="products-head">
+        <h1>Đơn hàng của tôi</h1>
+        <p>{{ orders|length }} đơn hàng</p>
+      </div>
+
+      {% if flash_message %}
+      <div class="flash-message {% if flash_type == 'success' %}success{% else %}error{% endif %}">
+        <i data-lucide="{% if flash_type == 'success' %}check-circle{% else %}alert-circle{% endif %}"></i>
+        <span>{{ flash_message }}</span>
+      </div>
+      {% endif %}
+
+      {% if orders %}
+        {% for order in orders %}
+        <article class="product-card" style="margin-bottom: 16px;">
+          <div class="product-body">
+            <div class="meta">Đơn #{{ order.id }} • {{ order.created_at }}</div>
+            <h3>Trạng thái: {{ order.status_label|default:order.status }}</h3>
+            <div class="stock">Tổng tiền: {{ order.total_amount|floatformat:0 }}₫</div>
+            <p style="margin-top: 8px; color:#475569;">Địa chỉ: {{ order.shipping_address }} • SĐT: {{ order.phone }}</p>
+
+            {% if order.items %}
+            <div style="margin-top: 12px; display: grid; gap: 10px;">
+              {% for item in order.items %}
+              <div style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px;">
+                <div style="display:flex; justify-content:space-between; gap:8px;">
+                  <strong>{{ item.product_name }}</strong>
+                  <span>x{{ item.quantity }}</span>
+                </div>
+                <div style="font-size: 14px; color:#64748b; margin-top:4px;">{{ item.product_type|upper }} • {{ item.price|floatformat:0 }}₫</div>
+
+                {% if order.status == 'completed' %}
+                <form method="post" style="margin-top:10px; display:grid; gap:8px;">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="create_review" />
+                  <input type="hidden" name="product_id" value="{{ item.product_id }}" />
+                  <input type="hidden" name="product_type" value="{{ item.product_type }}" />
+                  <label>Đánh giá sản phẩm đã mua</label>
+                  <select name="rating" required>
+                    <option value="5">5 - Rất tốt</option>
+                    <option value="4">4 - Tốt</option>
+                    <option value="3">3 - Bình thường</option>
+                    <option value="2">2 - Chưa tốt</option>
+                    <option value="1">1 - Kém</option>
+                  </select>
+                  <textarea name="comment" rows="2" placeholder="Nhận xét của bạn"></textarea>
+                  <button type="submit" class="btn btn-primary">Gửi đánh giá</button>
+                </form>
+                {% endif %}
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+        </article>
+        {% endfor %}
+      {% else %}
+      <section class="empty-state">
+        <i data-lucide="package-search"></i>
+        <h3>Bạn chưa có đơn hàng nào</h3>
+        <p>Đặt hàng từ giỏ hàng để theo dõi trạng thái tại đây.</p>
+        <div class="center-action">
+          <a href="/products" class="btn btn-primary">Mua sắm ngay</a>
+        </div>
+      </section>
+      {% endif %}
+    </section>
+  </main>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>lucide.createIcons();</script>
+</body>
+</html>

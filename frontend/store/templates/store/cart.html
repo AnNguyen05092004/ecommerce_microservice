@@ -1,0 +1,128 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Giỏ hàng | TechStore</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'store/css/site.css' %}" />
+</head>
+<body>
+  <div class="shipping-bar"><i data-lucide="shopping-bag"></i> Quản lý giỏ hàng của bạn</div>
+
+  <header class="main-header">
+    <a class="brand" href="/">TechStore</a>
+    <nav class="main-nav">
+      <a href="/"><i data-lucide="house"></i> Trang chủ</a>
+      <a href="/products"><i data-lucide="grid-2x2"></i> Sản phẩm</a>
+      {% if auth_user_type == 'customer' %}
+      <a href="/my-orders"><i data-lucide="receipt-text"></i> Đơn hàng của tôi</a>
+      {% endif %}
+      {% if auth_user_type == 'staff' %}
+      <a href="/staff/dashboard"><i data-lucide="layout-dashboard"></i> Dashboard Staff</a>
+      {% else %}
+      <a href="/login/customer"><i data-lucide="user"></i> Customer</a>
+      <a href="/login/staff"><i data-lucide="briefcase"></i> Staff</a>
+      {% endif %}
+      {% if auth_user_type %}
+      <a href="/logout"><i data-lucide="log-out"></i> Đăng xuất</a>
+      {% endif %}
+    </nav>
+    <a class="cart-btn" href="/cart" aria-label="Giỏ hàng">
+      <i data-lucide="shopping-cart"></i>
+      <span>{{ cart_count }}</span>
+    </a>
+  </header>
+
+  <main class="cart-wrap">
+    <div class="products-head cart-head">
+      <h1>Giỏ hàng của bạn</h1>
+      <p>{{ cart_count }} sản phẩm</p>
+
+      {% if flash_message %}
+      <div class="flash-message cart-inline-flash {% if flash_type == 'success' %}success{% else %}error{% endif %}">
+        {% if flash_type == 'success' %}
+        <i data-lucide="check-circle"></i>
+        {% else %}
+        <i data-lucide="alert-circle"></i>
+        {% endif %}
+        <span>{{ flash_message }}</span>
+      </div>
+      {% endif %}
+    </div>
+
+    {% if cart_items %}
+    <section class="cart-list">
+      {% for item in cart_items %}
+      <article class="cart-item">
+        <a href="{{ item.detail_url }}" class="cart-item-image-link">
+          <img src="{{ item.image }}" alt="{{ item.name }}" class="cart-item-image" />
+        </a>
+
+        <div class="cart-item-info">
+          <a href="{{ item.detail_url }}" class="cart-item-name">{{ item.name }}</a>
+          <p class="cart-item-type">{{ item.product_type|upper }} • ID {{ item.product_id }}</p>
+          <p class="cart-item-price">Đơn giá: {{ item.price }}</p>
+          <p class="cart-item-subtotal">Thành tiền: {{ item.subtotal }}</p>
+        </div>
+
+        <div class="cart-item-actions">
+          <form method="post" class="cart-update-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update" />
+            <input type="hidden" name="item_id" value="{{ item.id }}" />
+            <label for="qty-{{ item.id }}">Số lượng</label>
+            <input id="qty-{{ item.id }}" name="quantity" type="number" min="1" max="99" value="{{ item.quantity }}" />
+            <button type="submit" class="btn btn-primary">Cập nhật</button>
+          </form>
+
+          <form method="post" class="cart-delete-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="delete" />
+            <input type="hidden" name="item_id" value="{{ item.id }}" />
+            <button type="submit" class="btn btn-ghost">Xóa</button>
+          </form>
+        </div>
+      </article>
+      {% endfor %}
+    </section>
+
+    <aside class="cart-summary">
+      <h2>Tổng thanh toán</h2>
+      <p class="cart-total">{{ cart_total }}</p>
+      <form method="post" style="display: grid; gap: 10px; margin-bottom: 12px;">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="checkout" />
+        <label for="shipping_address">Địa chỉ giao hàng</label>
+        <input id="shipping_address" name="shipping_address" type="text" required placeholder="Số nhà, đường, quận, thành phố" />
+
+        <label for="phone">Số điện thoại</label>
+        <input id="phone" name="phone" type="text" required placeholder="09xxxxxxxx" />
+
+        <label for="note">Ghi chú</label>
+        <textarea id="note" name="note" rows="3" placeholder="Ghi chú cho đơn hàng (không bắt buộc)"></textarea>
+
+        <button type="submit" class="btn btn-primary">Đặt hàng ngay</button>
+      </form>
+      <a href="/products" class="btn btn-ghost">Mua thêm</a>
+      <a href="/my-orders" class="btn btn-ghost">Xem đơn hàng của tôi</a>
+    </aside>
+    {% else %}
+    <section class="empty-state">
+      <i data-lucide="shopping-cart"></i>
+      <h3>Giỏ hàng đang trống</h3>
+      <p>Hãy thêm sản phẩm yêu thích vào giỏ để tiếp tục.</p>
+      <div class="center-action">
+        <a href="/products" class="btn btn-primary">Bắt đầu mua sắm</a>
+      </div>
+    </section>
+    {% endif %}
+  </main>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>lucide.createIcons();</script>
+</body>
+</html>

@@ -1,0 +1,321 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TechStore | Laptop & Điện thoại</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'store/css/site.css' %}" />
+</head>
+<body class="home-template">
+  <div class="shipping-bar"><i data-lucide="truck"></i> Miễn phí vận chuyển toàn quốc cho đơn trên 500.000đ</div>
+
+  <header class="main-header template-header">
+    <a class="brand template-brand" href="/"><i data-lucide="book-open-text"></i> TechStore</a>
+    <form class="template-search" action="/products" method="get">
+      <i data-lucide="search"></i>
+      <div class="search-suggest-wrap template-search-suggest-wrap">
+        <input id="home-search-input" type="text" name="search" placeholder="Tìm sản phẩm, thương hiệu, danh mục..." autocomplete="off" />
+        <div id="home-search-suggest-box" class="search-suggest-box hidden" role="listbox" aria-label="AI semantic product suggestions"></div>
+      </div>
+    </form>
+    <nav class="main-nav template-nav">
+      <a href="/products">Sản phẩm</a>
+      <details class="category-menu">
+        <summary>Danh mục</summary>
+        <div class="category-dropdown">
+          <a href="/products?type=computer"><span class="cd-icon"><i data-lucide="laptop"></i></span>Laptop</a>
+          <a href="/products?type=mobile"><span class="cd-icon"><i data-lucide="smartphone"></i></span>Điện thoại</a>
+          <a href="/products?type=tablet"><span class="cd-icon"><i data-lucide="tablet"></i></span>Tablet</a>
+          <a href="/products?type=audio"><span class="cd-icon"><i data-lucide="headphones"></i></span>Audio</a>
+          <a href="/products?type=wearable"><span class="cd-icon"><i data-lucide="watch"></i></span>Wearable</a>
+          <a href="/products?type=component"><span class="cd-icon"><i data-lucide="cpu"></i></span>Linh kiện</a>
+          <a href="/products?type=peripheral"><span class="cd-icon"><i data-lucide="mouse-pointer-2"></i></span>Phụ kiện PC</a>
+          <a href="/products?type=monitor"><span class="cd-icon"><i data-lucide="monitor"></i></span>Màn hình</a>
+          <a href="/products?type=accessory"><span class="cd-icon"><i data-lucide="plug"></i></span>Phụ kiện điện thoại</a>
+          <a href="/products?type=charging"><span class="cd-icon"><i data-lucide="battery-charging"></i></span>Sạc và pin</a>
+          <a href="/products?type=book"><span class="cd-icon"><i data-lucide="book-open"></i></span>Sách</a>
+        </div>
+      </details>
+      <a href="/products?sort=stock_desc">Bán chạy</a>
+    </nav>
+    <div class="template-actions">
+      <a class="cart-btn" href="/cart" aria-label="Giỏ hàng">
+        <i data-lucide="shopping-cart"></i>
+        <span>{{ cart_count }}</span>
+      </a>
+      {% if auth_user_type == 'staff' %}
+      <details class="account-menu">
+        <summary class="template-user account-trigger"><i data-lucide="user"></i> Staff <i data-lucide="chevron-down"></i></summary>
+        <div class="account-dropdown">
+          <a href="/staff/dashboard"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+          <a class="danger" href="/logout"><i data-lucide="log-out"></i> Đăng xuất</a>
+        </div>
+      </details>
+      {% elif auth_user_type == 'customer' %}
+      <details class="account-menu">
+        <summary class="template-user account-trigger"><i data-lucide="user"></i> {{ auth_user_name|default:'Khách hàng' }} <i data-lucide="chevron-down"></i></summary>
+        <div class="account-dropdown">
+          <a href="/cart"><i data-lucide="shopping-bag"></i> Giỏ hàng</a>
+          <a href="/my-orders"><i data-lucide="package"></i> Đơn hàng</a>
+          <a class="danger" href="/logout"><i data-lucide="log-out"></i> Đăng xuất</a>
+        </div>
+      </details>
+      {% else %}
+      <a class="template-user" href="/login/customer"><i data-lucide="user"></i> Đăng nhập</a>
+      {% endif %}
+    </div>
+  </header>
+
+  <section class="template-hero-wrap">
+    <section class="hero template-hero">
+      <div class="hero-copy">
+        <p class="pill"><i data-lucide="sparkles"></i> Bộ sưu tập công nghệ 2026</p>
+        <h1>Khám phá sản phẩm <span>đúng gu của bạn</span></h1>
+        <p class="lead">Gợi ý cá nhân hóa theo nhu cầu học tập, công việc và giải trí. Dễ chọn, dễ mua, dễ nâng cấp.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="/products">Khám phá ngay</a>
+          <a class="btn btn-ghost" href="/products?type=book">Xem danh mục sách</a>
+        </div>
+      </div>
+      <div class="hero-media">
+        <img src="https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1600&q=80" alt="Modern tech workspace" />
+      </div>
+    </section>
+
+    <section class="template-metrics">
+      <article><strong>100+</strong><span>Sản phẩm mới</span></article>
+      <article><strong>30+</strong><span>Thương hiệu</span></article>
+      <article><strong>12</strong><span>Nhóm ngành hàng</span></article>
+      <article><strong>Free</strong><span>Ship > 500K</span></article>
+    </section>
+  </section>
+
+  <section class="template-categories">
+    <div class="section-head">
+      <div>
+        <h2>Duyệt theo danh mục</h2>
+        <p>Tìm đúng nhóm sản phẩm phù hợp nhu cầu của bạn.</p>
+      </div>
+      <a href="/products">Xem tất cả</a>
+    </div>
+    <div class="category-mosaic">
+      {% for item in category_showcase %}
+      <a class="category-tile {% if forloop.first %}tile-large{% endif %}" href="/products?type={{ item.type }}" style="background-image:url('{{ item.image }}')">
+        <div class="tile-overlay"></div>
+        <div class="tile-content">
+          <h3>{{ item.name }}</h3>
+          <p>{{ item.subtitle }}</p>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="trust-row template-trust-row">
+    <article><span><i data-lucide="truck"></i></span><p>Giao hàng nhanh toàn quốc</p></article>
+    <article><span><i data-lucide="refresh-ccw"></i></span><p>Đổi trả linh hoạt 7 ngày</p></article>
+    <article><span><i data-lucide="package-check"></i></span><p>Đóng gói an toàn</p></article>
+    <article><span><i data-lucide="messages-square"></i></span><p>Hỗ trợ 24/7</p></article>
+  </section>
+
+  <section class="featured">
+    <h2>Sản phẩm <span>bán chạy nhất</span></h2>
+    <p>Những sản phẩm công nghệ được yêu thích nhất và có lượt mua cao nhất tuần này.</p>
+
+    <div class="product-grid">
+      {% for product in featured_products %}
+      <article class="product-card">
+        <div class="image-wrap">
+          <span class="badge">{{ product.badge }}</span>
+          <img src="{{ product.image }}" alt="{{ product.name }}" />
+        </div>
+        <div class="product-body">
+          <div class="meta">★★★★★ ({{ product.reviews }})</div>
+          <h3>{{ product.name }}</h3>
+          <div class="price-line">
+            <strong>{{ product.price }}</strong>
+            {% if product.old_price %}<s>{{ product.old_price }}</s>{% endif %}
+          </div>
+          <div class="stock">Còn lại: {{ product.stock }}</div>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+
+    <div class="center-action">
+      <a class="btn btn-primary" href="/products">Xem tất cả sản phẩm</a>
+    </div>
+  </section>
+
+  <section class="advisor-section">
+    <div class="advisor-head">
+      <div>
+        <h2>Recommended for you</h2>
+        <p>Gợi ý từ hành vi gần đây và bộ AI advisor của hệ thống.</p>
+      </div>
+      {% if advisor_summary.top_categories %}
+      <span class="advisor-chip">Quan tâm nhiều: {{ advisor_summary.top_categories|join:", " }}</span>
+      {% endif %}
+    </div>
+    <div class="product-grid advisor-grid">
+      {% for product in advisor_recommendations %}
+      <a class="product-link" href="{{ product.detail_url }}">
+        <article class="product-card advisor-card">
+          <div class="image-wrap">
+            <img src="{{ product.image }}" alt="{{ product.name }}" />
+          </div>
+          <div class="product-body">
+            <div class="meta">{{ product.brand }} • {{ product.product_type|upper }}</div>
+            <h3>{{ product.name }}</h3>
+            <div class="price-line"><strong>{{ product.price }}</strong></div>
+            <p class="advisor-reason">{{ product.reason }}</p>
+          </div>
+        </article>
+      </a>
+      {% empty %}
+      <div class="empty-state">
+        <i data-lucide="sparkles"></i>
+        <h3>Chưa có gợi ý cá nhân hóa</h3>
+        <p>Hệ thống sẽ gợi ý tốt hơn khi bạn tương tác thêm với sản phẩm.</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="promo">
+    <h2><i data-lucide="gift"></i> Ưu đãi xanh cuối tuần</h2>
+    <p>Voucher giảm đến 15% cho nhóm sản phẩm phụ kiện và sách công nghệ.</p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="#">Khám phá ngay</a>
+      <a class="btn btn-outline" href="#">Xem chi tiết</a>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="footer-col">
+      <a class="brand" href="#">TechStore</a>
+      <p>Cửa hàng công nghệ uy tín hàng đầu Việt Nam với hơn 10 năm kinh nghiệm.</p>
+      <div class="socials">
+        <span><i data-lucide="facebook"></i></span>
+        <span><i data-lucide="instagram"></i></span>
+        <span><i data-lucide="youtube"></i></span>
+      </div>
+    </div>
+    <div class="footer-col">
+      <h4>Liên kết nhanh</h4>
+      <a href="#">Giới thiệu</a>
+      <a href="#">Sản phẩm</a>
+      <a href="#">Khuyến mãi</a>
+      <a href="#">Tin tức</a>
+      <a href="#">Liên hệ</a>
+    </div>
+    <div class="footer-col">
+      <h4>Hỗ trợ khách hàng</h4>
+      <a href="#">Chính sách bảo hành</a>
+      <a href="#">Chính sách đổi trả</a>
+      <a href="#">Hướng dẫn mua hàng</a>
+      <a href="#">Hướng dẫn thanh toán</a>
+      <a href="#">Câu hỏi thường gặp</a>
+    </div>
+    <div class="footer-col">
+      <h4>Thông tin liên hệ</h4>
+      <p><i data-lucide="map-pin"></i> 123 Nguyễn Huệ, Quận 1, TP.HCM</p>
+      <p><i data-lucide="phone"></i> 1900 xxxx</p>
+      <p><i data-lucide="mail"></i> support@techstore.vn</p>
+    </div>
+  </footer>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="{% static 'store/js/advisor-widget.js' %}"></script>
+  <script>
+    lucide.createIcons();
+    initAdvisorWidget({
+      pageName: "home",
+      chatUrl: "/advisor/chat",
+      eventUrl: "/advisor/event",
+      storageKey: "advisor-chat-history-home",
+      suggestionChips: ["Laptop nao tot?", "Pin trau?", "Gia duoi 10tr?"],
+    });
+
+    (function () {
+      const input = document.getElementById("home-search-input");
+      const box = document.getElementById("home-search-suggest-box");
+      if (!input || !box) {
+        return;
+      }
+
+      let timer = null;
+
+      function hideSuggestions() {
+        box.classList.add("hidden");
+        box.innerHTML = "";
+      }
+
+      function renderSuggestions(items) {
+        if (!Array.isArray(items) || !items.length) {
+          hideSuggestions();
+          return;
+        }
+
+        box.innerHTML = "";
+        items.forEach(function (item) {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "search-suggest-item semantic-suggest-item";
+          const title = document.createElement("span");
+          title.className = "semantic-suggest-title";
+          title.textContent = item.name || "Sản phẩm";
+          const meta = document.createElement("span");
+          meta.className = "semantic-suggest-meta";
+          meta.textContent = (item.brand || "TechStore") + " \u2022 " + (item.product_type || "").toUpperCase();
+          button.appendChild(title);
+          button.appendChild(meta);
+          button.addEventListener("click", function () {
+            window.location.href = "/products/" + (item.product_type || "computer") + "/" + item.id;
+          });
+          box.appendChild(button);
+        });
+        box.classList.remove("hidden");
+      }
+
+      async function fetchSuggestions(query) {
+        try {
+          const response = await fetch("/advisor/semantic-search", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({query: query, language: "vi", limit: 6}),
+          });
+          const payload = await response.json();
+          renderSuggestions(payload.results || []);
+        } catch (error) {
+          hideSuggestions();
+        }
+      }
+
+      input.addEventListener("input", function () {
+        const query = input.value.trim();
+        if (timer) {
+          clearTimeout(timer);
+        }
+        if (query.length < 2) {
+          hideSuggestions();
+          return;
+        }
+        timer = setTimeout(function () {
+          fetchSuggestions(query);
+        }, 220);
+      });
+
+      document.addEventListener("click", function (event) {
+        if (!box.contains(event.target) && event.target !== input) {
+          hideSuggestions();
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
