@@ -1,0 +1,40 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Advisor Benchmark Report</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 32px; background: #f8fafc; color: #111827; }
+    .hero { background: linear-gradient(135deg, #059669, #0f766e); color: white; padding: 24px; border-radius: 18px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin: 24px 0; }
+    .card { background: white; border-radius: 16px; padding: 18px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08); }
+    table { width: 100%; border-collapse: collapse; background: white; border-radius: 16px; overflow: hidden; margin-top: 16px; }
+    th, td { padding: 12px 14px; border-bottom: 1px solid #e5e7eb; text-align: left; }
+    th { background: #ecfeff; }
+  </style>
+</head>
+<body>
+  <div class="hero">
+    <h1>Advisor Evaluation Report</h1>
+    <p>Generated at 2026-04-20T04:34:15.483460+00:00</p>
+    <p>Phase: phase-final • Version: v2.0</p>
+  </div>
+  <div class="grid">
+    <div class="card"><strong>Chat Success</strong><div>6</div></div>
+    <div class="card"><strong>Recommendation Non-empty</strong><div>1.0</div></div>
+    <div class="card"><strong>Semantic Correct Type</strong><div>1.0</div></div>
+    <div class="card"><strong>Chat p95</strong><div>8978.89 ms</div></div>
+  </div>
+  <table>
+    <thead><tr><th>Suite</th><th>Success</th><th>Failure</th><th>Primary Metric</th><th>p95 Latency</th></tr></thead>
+    <tbody>
+      <tr><td>Chat</td><td>6</td><td>0</td><td>0.5833</td><td>8978.89</td></tr>
+      <tr><td>Recommendations</td><td>4</td><td>0</td><td>1.0</td><td>152.64</td></tr>
+      <tr><td>Semantic Search</td><td>3</td><td>0</td><td>1.0</td><td>362.98</td></tr>
+    </tbody>
+  </table>
+</body>
+</html>
+    

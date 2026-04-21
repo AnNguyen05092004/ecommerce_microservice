@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import logging
 import re
+import unicodedata
 from collections import Counter, defaultdict
 from typing import TYPE_CHECKING
 
@@ -157,9 +158,20 @@ CATEGORY_KEYWORDS = {
 _TOKEN_RE = re.compile(r"\w+", re.UNICODE)
 
 
+def _normalize_text(text: str) -> str:
+    """Lowercase + strip accents for robust Vietnamese keyword matching."""
+    raw = str(text or "").strip().lower()
+    # NFD decomposition then drop combining marks to remove diacritics.
+    return "".join(
+        char
+        for char in unicodedata.normalize("NFD", raw)
+        if not unicodedata.combining(char)
+    )
+
+
 def _parse_query_intent(query: str):
     """Return (categories: list[str], concepts: list[str]) inferred from query."""
-    normalized = query.lower().strip()
+    normalized = _normalize_text(query)
     tokens = _TOKEN_RE.findall(normalized)
     token_set = set(tokens)
 
@@ -174,9 +186,13 @@ def _parse_query_intent(query: str):
                 if cat not in categories:
                     categories.append(cat)
 
-    # Single-word category match
+    # Category match: support both single-word and multi-word phrases.
     for kw, cat in CATEGORY_KEYWORDS.items():
-        if kw in token_set and cat not in categories:
+        normalized_kw = _normalize_text(kw)
+        if (
+            (" " in normalized_kw and normalized_kw in normalized)
+            or normalized_kw in token_set
+        ) and cat not in categories:
             categories.append(cat)
 
     return categories, concepts
@@ -313,21 +329,18 @@ def build_kb_graph_documents(driver=None):
 # ─── Phase 2B: Product + Customer entity extraction ──────────────────────────
 
 _SERVICE_ENDPOINTS = {
-    "computer": (getattr(settings, "COMPUTER_SERVICE_URL", ""), "/api/computers/"),
-    "mobile": (getattr(settings, "MOBILE_SERVICE_URL", ""), "/api/mobiles/"),
-    "clothes": (getattr(settings, "CLOTHES_SERVICE_URL", ""), "/api/clothes/"),
-    "tablet": (getattr(settings, "TABLET_SERVICE_URL", ""), "/api/tablets/"),
-    "audio": (getattr(settings, "AUDIO_SERVICE_URL", ""), "/api/audios/"),
-    "wearable": (getattr(settings, "WEARABLE_SERVICE_URL", ""), "/api/wearables/"),
-    "component": (getattr(settings, "COMPONENT_SERVICE_URL", ""), "/api/components/"),
-    "peripheral": (
-        getattr(settings, "PERIPHERAL_SERVICE_URL", ""),
-        "/api/peripherals/",
-    ),
-    "monitor": (getattr(settings, "MONITOR_SERVICE_URL", ""), "/api/monitors/"),
-    "accessory": (getattr(settings, "ACCESSORY_SERVICE_URL", ""), "/api/accessories/"),
-    "charging": (getattr(settings, "CHARGING_SERVICE_URL", ""), "/api/chargings/"),
-    "book": (getattr(settings, "BOOK_SERVICE_URL", ""), "/api/books/"),
+    "computer": (settings.PRODUCT_SERVICE_URL, "/api/products/?type=computer"),
+    "mobile": (settings.PRODUCT_SERVICE_URL, "/api/products/?type=mobile"),
+    "clothes": (settings.PRODUCT_SERVICE_URL, "/api/products/?type=clothes"),
+    "tablet": (settings.PRODUCT_SERVICE_URL, "/api/products/?type=tablet"),
+    "audio": (settings.PRODUCT_SERVICE_URL, "/api/products/?type=audio"),
+    "wearable": (settings.PRODUCT_SERVICE_URL, "/api/products/?type=wearable"),
+    "component": (settings.PRODUCT_SERVICE_URL, "/api/products/?type=component"),
+    "peripheral": (settings.PRODUCT_SERVICE_URL, "/api/products/?type=peripheral"),
+    "monitor": (settings.PRODUCT_SERVICE_URL, "/api/products/?type=monitor"),
+    "accessory": (settings.PRODUCT_SERVICE_URL, "/api/products/?type=accessory"),
+    "charging": (settings.PRODUCT_SERVICE_URL, "/api/products/?type=charging"),
+    "book": (settings.PRODUCT_SERVICE_URL, "/api/products/?type=book"),
 }
 
 
@@ -894,7 +907,13 @@ def retrieve_products_graph(
         if preferred_category not in categories:
             categories.append(preferred_category)
     requested_types = []
-    for item in product_types or []:
+    normalized_product_types = product_types
+    if isinstance(normalized_product_types, str):
+        normalized_product_types = [
+            part.strip() for part in normalized_product_types.split(",") if part.strip()
+        ]
+
+    for item in normalized_product_types or []:
         value = str(item or "").strip().lower()
         if value and value not in requested_types:
             requested_types.append(value)

@@ -1,0 +1,61 @@
+openapi: 3.0.3
+info:
+  title: Product Service API
+  version: 0.1.0
+servers:
+  - url: http://product-service:8017
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+  /api/product-types/:
+    get:
+      summary: List product types
+      responses:
+        '200':
+          description: Product type list
+  /api/products/:
+    get:
+      summary: List products (catalog facade)
+      parameters:
+        - in: query
+          name: type
+          schema:
+            type: string
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: page_size
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Product list
+  /api/products/{product_type}/{product_id}/:
+    get:
+      summary: Product detail by type + id
+      parameters:
+        - in: path
+          name: product_type
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: product_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Product detail
+        '404':
+          description: Not found

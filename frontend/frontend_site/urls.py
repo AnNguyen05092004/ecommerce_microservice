@@ -30,6 +30,7 @@ from store.views import (
     staff_orders_view,
     staff_customers_view,
     staff_ai_metrics_view,
+    staff_ai_report_view,
 )
 
 
@@ -127,5 +128,10 @@ urlpatterns = [
     path("staff/orders", staff_orders_view, name="staff-orders"),
     path("staff/customers", staff_customers_view, name="staff-customers"),
     path("admin/ai-metrics", staff_ai_metrics_view, name="staff-ai-metrics"),
+    path(
+        "admin/ai-reports/<str:report_key>",
+        staff_ai_report_view,
+        name="staff-ai-report",
+    ),
     path("health", health_check, name="health-check"),
 ]

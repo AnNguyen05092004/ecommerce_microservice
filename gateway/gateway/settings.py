@@ -1,5 +1,6 @@
 """Gateway settings — no database needed."""
 
+import json
 import os
 from pathlib import Path
 
@@ -29,41 +30,77 @@ DATABASES = {}
 JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "jwt-secret")
 
 # Service URLs
+ADVISOR_SERVICE_URL = os.environ.get(
+    "ADVISOR_SERVICE_URL", "http://advisor-service:8006"
+)
+IDENTITY_SERVICE_URL = os.environ.get(
+    "IDENTITY_SERVICE_URL", "http://identity-service:8016"
+)
+PRODUCT_SERVICE_URL = os.environ.get(
+    "PRODUCT_SERVICE_URL", "http://product-service:8017"
+)
+INVENTORY_SERVICE_URL = os.environ.get(
+    "INVENTORY_SERVICE_URL", "http://inventory-service:8018"
+)
+CART_SERVICE_URL = os.environ.get("CART_SERVICE_URL", "http://cart-service:8019")
+ORDER_SERVICE_URL = os.environ.get("ORDER_SERVICE_URL", "http://order-service:8020")
+PAYMENT_SERVICE_URL = os.environ.get(
+    "PAYMENT_SERVICE_URL", "http://payment-service:8021"
+)
+REVIEW_SERVICE_URL = os.environ.get("REVIEW_SERVICE_URL", "http://review-service:8022")
 STAFF_SERVICE_URL = os.environ.get("STAFF_SERVICE_URL", "http://staff-service:8001")
 CUSTOMER_SERVICE_URL = os.environ.get(
     "CUSTOMER_SERVICE_URL", "http://customer-service:8002"
 )
-COMPUTER_SERVICE_URL = os.environ.get(
-    "COMPUTER_SERVICE_URL", "http://computer-service:8003"
-)
-MOBILE_SERVICE_URL = os.environ.get("MOBILE_SERVICE_URL", "http://mobile-service:8004")
-CLOTHES_SERVICE_URL = os.environ.get(
-    "CLOTHES_SERVICE_URL", "http://clothes-service:8005"
-)
-TABLET_SERVICE_URL = os.environ.get("TABLET_SERVICE_URL", "http://tablet-service:8007")
-AUDIO_SERVICE_URL = os.environ.get("AUDIO_SERVICE_URL", "http://audio-service:8008")
-WEARABLE_SERVICE_URL = os.environ.get(
-    "WEARABLE_SERVICE_URL", "http://wearable-service:8009"
-)
-COMPONENT_SERVICE_URL = os.environ.get(
-    "COMPONENT_SERVICE_URL", "http://component-service:8010"
-)
-PERIPHERAL_SERVICE_URL = os.environ.get(
-    "PERIPHERAL_SERVICE_URL", "http://peripheral-service:8011"
-)
-MONITOR_SERVICE_URL = os.environ.get(
-    "MONITOR_SERVICE_URL", "http://monitor-service:8012"
-)
-ACCESSORY_SERVICE_URL = os.environ.get(
-    "ACCESSORY_SERVICE_URL", "http://accessory-service:8013"
-)
-CHARGING_SERVICE_URL = os.environ.get(
-    "CHARGING_SERVICE_URL", "http://charging-service:8014"
-)
-BOOK_SERVICE_URL = os.environ.get("BOOK_SERVICE_URL", "http://book-service:8015")
-ADVISOR_SERVICE_URL = os.environ.get(
-    "ADVISOR_SERVICE_URL", "http://advisor-service:8006"
-)
+
+
+def _load_service_registry():
+    defaults = {
+        "advisor-service": ADVISOR_SERVICE_URL,
+        "identity-service": IDENTITY_SERVICE_URL,
+        "product-service": PRODUCT_SERVICE_URL,
+        "inventory-service": INVENTORY_SERVICE_URL,
+        "cart-service": CART_SERVICE_URL,
+        "order-service": ORDER_SERVICE_URL,
+        "payment-service": PAYMENT_SERVICE_URL,
+        "review-service": REVIEW_SERVICE_URL,
+        "staff-service": STAFF_SERVICE_URL,
+        "customer-service": CUSTOMER_SERVICE_URL,
+        # Bounded-context facades
+        "identity": IDENTITY_SERVICE_URL,
+        "catalog": PRODUCT_SERVICE_URL,
+        "inventory": INVENTORY_SERVICE_URL,
+        "cart": CART_SERVICE_URL,
+        "orders": ORDER_SERVICE_URL,
+        "payments": PAYMENT_SERVICE_URL,
+        "reviews": REVIEW_SERVICE_URL,
+        "staff": STAFF_SERVICE_URL,
+        "customer": CUSTOMER_SERVICE_URL,
+        "advisor": ADVISOR_SERVICE_URL,
+    }
+
+    raw = os.environ.get("SERVICES_REGISTRY", "").strip()
+    if not raw:
+        return defaults
+
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        return defaults
+
+    if not isinstance(parsed, dict):
+        return defaults
+
+    cleaned = {
+        str(name): str(url)
+        for name, url in parsed.items()
+        if isinstance(name, str) and isinstance(url, str) and url
+    }
+    defaults.update(cleaned)
+    return defaults
+
+
+SERVICE_REGISTRY = _load_service_registry()
 
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Asia/Ho_Chi_Minh"

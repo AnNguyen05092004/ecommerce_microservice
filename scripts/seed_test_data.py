@@ -246,86 +246,33 @@ def ensure_categories(token: str) -> tuple[list[int], list[int], list[int]]:
         ("Áo khoác", "Ao khoac gio mua dong"),
     ]
 
-    status, payload = http_json("GET", "/api/computer-service/categories/")
+    status, payload = http_json("GET", "/api/catalog/categories/")
     if status != 200:
-        raise RuntimeError(f"Cannot list computer categories: {status} {payload}")
-    existing_computer = {
-        c.get("name"): c.get("id") for c in payload if isinstance(c, dict)
-    }
+        raise RuntimeError(f"Cannot list catalog categories: {status} {payload}")
 
-    for name, desc in laptop_categories:
-        if name in existing_computer:
+    existing = {c.get("name"): c.get("id") for c in payload if isinstance(c, dict)}
+
+    all_categories = laptop_categories + mobile_categories + clothes_categories
+    for name, desc in all_categories:
+        if name in existing:
             continue
+
         c_status, c_payload = http_json(
             "POST",
-            "/api/computer-service/categories/",
+            "/api/catalog/categories/",
             {"name": name, "description": desc},
             token=token,
         )
-        if c_status != 201:
+        if c_status not in (200, 201):
             raise RuntimeError(
-                f"Create computer category failed: {c_status} {c_payload}"
+                f"Create category '{name}' failed: HTTP {c_status} -> {c_payload}"
             )
-        existing_computer[name] = c_payload.get("id")
-
-    status, payload = http_json("GET", "/api/mobile-service/categories/")
-    if status != 200:
-        raise RuntimeError(f"Cannot list mobile categories: {status} {payload}")
-    existing_mobile = {
-        c.get("name"): c.get("id") for c in payload if isinstance(c, dict)
-    }
-
-    for name, desc in mobile_categories:
-        if name in existing_mobile:
-            continue
-        c_status, c_payload = http_json(
-            "POST",
-            "/api/mobile-service/categories/",
-            {"name": name, "description": desc},
-            token=token,
-        )
-        if c_status != 201:
-            raise RuntimeError(f"Create mobile category failed: {c_status} {c_payload}")
-        existing_mobile[name] = c_payload.get("id")
-
-    status, payload = http_json("GET", "/api/clothes-service/categories/")
-    if status != 200:
-        raise RuntimeError(f"Cannot list clothes categories: {status} {payload}")
-    existing_clothes = {
-        c.get("name"): c.get("id") for c in payload if isinstance(c, dict)
-    }
-
-    for name, desc in clothes_categories:
-        if name in existing_clothes:
-            continue
-        c_status, c_payload = http_json(
-            "POST",
-            "/api/clothes-service/categories/",
-            {"name": name, "description": desc},
-            token=token,
-        )
-        if c_status != 201:
-            raise RuntimeError(
-                f"Create clothes category failed: {c_status} {c_payload}"
-            )
-        existing_clothes[name] = c_payload.get("id")
+        existing[name] = c_payload.get("id")
 
     return (
-        [
-            existing_computer[name]
-            for name, _ in laptop_categories
-            if existing_computer.get(name)
-        ],
-        [
-            existing_mobile[name]
-            for name, _ in mobile_categories
-            if existing_mobile.get(name)
-        ],
-        [
-            existing_clothes[name]
-            for name, _ in clothes_categories
-            if existing_clothes.get(name)
-        ],
+        [existing[name] for name, _ in laptop_categories if existing.get(name)],
+        [existing[name] for name, _ in mobile_categories if existing.get(name)],
+        [existing[name] for name, _ in clothes_categories if existing.get(name)],
     )
 
 
@@ -768,7 +715,7 @@ def ensure_30_laptops(token: str, category_ids: list[int]) -> list[int]:
         },
     ]
 
-    existing = get_existing_names("/api/computer-service/computers/?page_size=200")
+    existing = get_existing_names("/api/catalog/products/?type=computer&page_size=200")
     created_or_existing_ids: list[int] = []
 
     for idx, laptop_data in enumerate(laptops, 1):
@@ -778,6 +725,7 @@ def ensure_30_laptops(token: str, category_ids: list[int]) -> list[int]:
             continue
 
         payload = {
+            "product_type": "computer",
             "name": name,
             "brand": name.split()[0],
             "price": laptop_data["price"],
@@ -788,7 +736,7 @@ def ensure_30_laptops(token: str, category_ids: list[int]) -> list[int]:
             "specs": normalize_specs(laptop_data["specs"], COMPUTER_SPEC_LIMITS),
         }
         status, response = http_json(
-            "POST", "/api/computer-service/computers/", payload, token=token
+            "POST", "/api/catalog/products/", payload, token=token
         )
         if status != 201:
             raise RuntimeError(f"Create laptop '{name}' failed: {status} {response}")
@@ -1195,7 +1143,7 @@ def ensure_30_mobiles(token: str, category_ids: list[int]) -> list[int]:
         },
     ]
 
-    existing = get_existing_names("/api/mobile-service/mobiles/?page_size=200")
+    existing = get_existing_names("/api/catalog/products/?type=mobile&page_size=200")
     created_or_existing_ids: list[int] = []
 
     for idx, mobile_data in enumerate(mobiles, 1):
@@ -1205,6 +1153,7 @@ def ensure_30_mobiles(token: str, category_ids: list[int]) -> list[int]:
             continue
 
         payload = {
+            "product_type": "mobile",
             "name": name,
             "brand": name.split()[0],
             "price": mobile_data["price"],
@@ -1215,7 +1164,7 @@ def ensure_30_mobiles(token: str, category_ids: list[int]) -> list[int]:
             "specs": normalize_specs(mobile_data["specs"], MOBILE_SPEC_LIMITS),
         }
         status, response = http_json(
-            "POST", "/api/mobile-service/mobiles/", payload, token=token
+            "POST", "/api/catalog/products/", payload, token=token
         )
         if status != 201:
             raise RuntimeError(f"Create mobile '{name}' failed: {status} {response}")
@@ -1695,7 +1644,7 @@ def ensure_50_clothes(token: str, category_ids: list[int]) -> list[int]:
         },
     ]
 
-    existing = get_existing_names("/api/clothes-service/clothes/?page_size=200")
+    existing = get_existing_names("/api/catalog/products/?type=clothes&page_size=200")
     created_or_existing_ids: list[int] = []
 
     for idx, clothes_data in enumerate(clothes_items, 1):
@@ -1705,6 +1654,7 @@ def ensure_50_clothes(token: str, category_ids: list[int]) -> list[int]:
             continue
 
         payload = {
+            "product_type": "clothes",
             "name": name,
             "brand": clothes_data["brand"],
             "price": clothes_data["price"],
@@ -1716,7 +1666,7 @@ def ensure_50_clothes(token: str, category_ids: list[int]) -> list[int]:
             "specs": normalize_specs(clothes_data["specs"], CLOTHES_SPEC_LIMITS),
         }
         status, response = http_json(
-            "POST", "/api/clothes-service/clothes/", payload, token=token
+            "POST", "/api/catalog/products/", payload, token=token
         )
         if status != 201:
             raise RuntimeError(f"Create clothes '{name}' failed: {status} {response}")
@@ -1729,7 +1679,6 @@ def ensure_50_clothes(token: str, category_ids: list[int]) -> list[int]:
 
 EXTENDED_CATALOG = {
     "tablet": {
-        "service": "tablet-service",
         "resource": "tablets",
         "categories": [
             ("Tablet cao cấp", "Hiệu năng cao, màn hình đẹp"),
@@ -1830,7 +1779,6 @@ EXTENDED_CATALOG = {
         ],
     },
     "audio": {
-        "service": "audio-service",
         "resource": "audios",
         "categories": [
             ("Tai nghe không dây", "Tai nghe ANC và TWS"),
@@ -1931,7 +1879,6 @@ EXTENDED_CATALOG = {
         ],
     },
     "wearable": {
-        "service": "wearable-service",
         "resource": "wearables",
         "categories": [
             ("Smartwatch", "Đồng hồ thông minh theo dõi sức khỏe"),
@@ -2032,7 +1979,6 @@ EXTENDED_CATALOG = {
         ],
     },
     "component": {
-        "service": "component-service",
         "resource": "components",
         "categories": [
             ("CPU", "Bộ vi xử lý desktop và workstation"),
@@ -2133,7 +2079,6 @@ EXTENDED_CATALOG = {
         ],
     },
     "peripheral": {
-        "service": "peripheral-service",
         "resource": "peripherals",
         "categories": [
             ("Chuột", "Chuột gaming và văn phòng"),
@@ -2234,7 +2179,6 @@ EXTENDED_CATALOG = {
         ],
     },
     "monitor": {
-        "service": "monitor-service",
         "resource": "monitors",
         "categories": [
             ("Màn hình gaming", "Tần số quét cao cho game"),
@@ -2335,7 +2279,6 @@ EXTENDED_CATALOG = {
         ],
     },
     "accessory": {
-        "service": "accessory-service",
         "resource": "accessories",
         "categories": [
             ("Ốp lưng", "Ốp bảo vệ điện thoại"),
@@ -2436,7 +2379,6 @@ EXTENDED_CATALOG = {
         ],
     },
     "charging": {
-        "service": "charging-service",
         "resource": "chargings",
         "categories": [
             ("Sạc nhanh", "Củ sạc công suất cao"),
@@ -2537,7 +2479,6 @@ EXTENDED_CATALOG = {
         ],
     },
     "book": {
-        "service": "book-service",
         "resource": "books",
         "categories": [
             ("Sách lập trình", "Tài liệu phát triển phần mềm"),
@@ -2642,45 +2583,44 @@ EXTENDED_CATALOG = {
 
 def ensure_extended_catalog(token: str) -> dict[str, list[int]]:
     seeded_ids: dict[str, list[int]] = {}
+
+    status, payload = http_json("GET", "/api/catalog/categories/")
+    if status != 200:
+        raise RuntimeError(
+            f"Cannot list catalog categories: HTTP {status} -> {payload}"
+        )
+
+    existing_categories = {
+        item.get("name"): item.get("id") for item in payload if isinstance(item, dict)
+    }
+
     for product_type, config in EXTENDED_CATALOG.items():
-        service = config["service"]
-        resource = config["resource"]
-
-        status, payload = http_json("GET", f"/api/{service}/categories/")
-        if status != 200:
-            raise RuntimeError(
-                f"Cannot list categories for {service}: HTTP {status} -> {payload}"
-            )
-
-        existing_categories = {
-            item.get("name"): item.get("id")
-            for item in payload
-            if isinstance(item, dict)
-        }
-
         category_ids: list[int] = []
         for category_name, category_desc in config["categories"]:
             category_id = existing_categories.get(category_name)
             if not category_id:
                 c_status, c_payload = http_json(
                     "POST",
-                    f"/api/{service}/categories/",
+                    "/api/catalog/categories/",
                     {"name": category_name, "description": category_desc},
                     token=token,
                 )
-                if c_status != 201:
+                if c_status not in (200, 201):
                     raise RuntimeError(
-                        f"Create category '{category_name}' for {service} failed: HTTP {c_status} -> {c_payload}"
+                        f"Create category '{category_name}' failed: HTTP {c_status} -> {c_payload}"
                     )
                 category_id = c_payload.get("id")
+                existing_categories[category_name] = category_id
 
             if isinstance(category_id, int):
                 category_ids.append(category_id)
 
         if not category_ids:
-            raise RuntimeError(f"No category IDs available for {service}")
+            raise RuntimeError(f"No category IDs available for {product_type}")
 
-        existing_names = get_existing_names(f"/api/{service}/{resource}/?page_size=300")
+        existing_names = get_existing_names(
+            f"/api/catalog/products/?type={product_type}&page_size=300"
+        )
         seeded_ids[product_type] = []
 
         for idx, product in enumerate(config["products"], 1):
@@ -2690,6 +2630,7 @@ def ensure_extended_catalog(token: str) -> dict[str, list[int]]:
                 continue
 
             payload = {
+                "product_type": product_type,
                 "name": name,
                 "brand": product["brand"],
                 "price": product["price"],
@@ -2702,7 +2643,7 @@ def ensure_extended_catalog(token: str) -> dict[str, list[int]]:
 
             create_status, create_payload = http_json(
                 "POST",
-                f"/api/{service}/{resource}/",
+                "/api/catalog/products/",
                 payload,
                 token=token,
             )
@@ -2734,23 +2675,25 @@ def backfill_missing_images(token: str) -> None:
         "book": "https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=1200&q=80",
     }
 
-    service_resource_map = {
-        "computer": ("computer-service", "computers"),
-        "mobile": ("mobile-service", "mobiles"),
-        "clothes": ("clothes-service", "clothes"),
-        "tablet": ("tablet-service", "tablets"),
-        "audio": ("audio-service", "audios"),
-        "wearable": ("wearable-service", "wearables"),
-        "component": ("component-service", "components"),
-        "peripheral": ("peripheral-service", "peripherals"),
-        "monitor": ("monitor-service", "monitors"),
-        "accessory": ("accessory-service", "accessories"),
-        "charging": ("charging-service", "chargings"),
-        "book": ("book-service", "books"),
-    }
+    product_types = [
+        "computer",
+        "mobile",
+        "clothes",
+        "tablet",
+        "audio",
+        "wearable",
+        "component",
+        "peripheral",
+        "monitor",
+        "accessory",
+        "charging",
+        "book",
+    ]
 
-    for product_type, (service, resource) in service_resource_map.items():
-        status, payload = http_json("GET", f"/api/{service}/{resource}/?page_size=300")
+    for product_type in product_types:
+        status, payload = http_json(
+            "GET", f"/api/catalog/products/?type={product_type}&page_size=300"
+        )
         if status != 200:
             log(
                 f"Warning: cannot read {product_type} for image backfill (HTTP {status})."
@@ -2772,7 +2715,7 @@ def backfill_missing_images(token: str) -> None:
 
             patch_status, patch_payload = http_json(
                 "PATCH",
-                f"/api/{service}/{resource}/{item_id}/",
+                f"/api/catalog/products/{item_id}/",
                 {"image": image_fallbacks[product_type]},
                 token=token,
             )
@@ -2783,64 +2726,30 @@ def backfill_missing_images(token: str) -> None:
 
 
 def reset_product_catalog(token: str) -> None:
-    service_resource_pairs = [
-        ("computer-service", "computers"),
-        ("mobile-service", "mobiles"),
-        ("clothes-service", "clothes"),
-        ("tablet-service", "tablets"),
-        ("audio-service", "audios"),
-        ("wearable-service", "wearables"),
-        ("component-service", "components"),
-        ("peripheral-service", "peripherals"),
-        ("monitor-service", "monitors"),
-        ("accessory-service", "accessories"),
-        ("charging-service", "chargings"),
-        ("book-service", "books"),
-    ]
+    log("Resetting existing catalog products before seeding...")
 
-    log("Resetting existing catalog (products + categories) before seeding...")
+    status, payload = http_json("GET", "/api/catalog/products/?page_size=1000")
+    if status != 200:
+        raise RuntimeError(
+            f"Cannot list existing catalog products for reset: HTTP {status} -> {payload}"
+        )
 
-    for service, resource in service_resource_pairs:
-        status, payload = http_json("GET", f"/api/{service}/{resource}/?page_size=500")
-        if status != 200:
+    items = payload.get("results", []) if isinstance(payload, dict) else payload
+    if not isinstance(items, list):
+        items = []
+
+    for item in items:
+        item_id = item.get("id") if isinstance(item, dict) else None
+        if not isinstance(item_id, int):
+            continue
+
+        d_status, d_payload = http_json(
+            "DELETE", f"/api/catalog/products/{item_id}/", token=token
+        )
+        if d_status not in (200, 202, 204, 404):
             raise RuntimeError(
-                f"Cannot list existing {resource} for reset: HTTP {status} -> {payload}"
+                f"Delete catalog product #{item_id} failed: HTTP {d_status} -> {d_payload}"
             )
-
-        items = payload.get("results", []) if isinstance(payload, dict) else payload
-        if not isinstance(items, list):
-            items = []
-
-        for item in items:
-            item_id = item.get("id") if isinstance(item, dict) else None
-            if not isinstance(item_id, int):
-                continue
-            d_status, d_payload = http_json(
-                "DELETE", f"/api/{service}/{resource}/{item_id}/", token=token
-            )
-            if d_status not in (200, 202, 204, 404):
-                raise RuntimeError(
-                    f"Delete {resource}#{item_id} failed: HTTP {d_status} -> {d_payload}"
-                )
-
-        c_status, c_payload = http_json("GET", f"/api/{service}/categories/")
-        if c_status != 200:
-            raise RuntimeError(
-                f"Cannot list categories for {service} reset: HTTP {c_status} -> {c_payload}"
-            )
-
-        categories = c_payload if isinstance(c_payload, list) else []
-        for category in categories:
-            category_id = category.get("id") if isinstance(category, dict) else None
-            if not isinstance(category_id, int):
-                continue
-            dc_status, dc_payload = http_json(
-                "DELETE", f"/api/{service}/categories/{category_id}/", token=token
-            )
-            if dc_status not in (200, 202, 204, 404):
-                raise RuntimeError(
-                    f"Delete category {service}#{category_id} failed: HTTP {dc_status} -> {dc_payload}"
-                )
 
 
 def seed_20_customers_and_orders() -> None:

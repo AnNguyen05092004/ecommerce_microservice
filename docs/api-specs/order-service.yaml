@@ -1,0 +1,47 @@
+openapi: 3.0.3
+info:
+  title: Order Service API
+  version: 0.1.0
+servers:
+  - url: http://order-service:8020
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+  /api/orders/:
+    get:
+      summary: List orders skeleton
+      responses:
+        '200':
+          description: Order list
+    post:
+      summary: Create order skeleton
+      responses:
+        '201':
+          description: Created
+  /api/orders/{order_id}/status/:
+    get:
+      summary: Get order status skeleton
+      parameters:
+        - in: path
+          name: order_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Status
+    patch:
+      summary: Update order status skeleton
+      parameters:
+        - in: path
+          name: order_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Updated

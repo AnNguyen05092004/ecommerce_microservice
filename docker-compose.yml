@@ -1,27 +1,44 @@
-# ============================================
-# TechStore — Docker Compose
-# ============================================
 version: '3.8'
 
 services:
-  # ─── DATABASES ──────────────────────────────
+  product-db:
+    image: postgres:15
+    container_name: techstore-product-db
+    environment:
+      POSTGRES_DB: ${PRODUCT_DB_NAME}
+      POSTGRES_USER: ${PRODUCT_DB_USER}
+      POSTGRES_PASSWORD: ${PRODUCT_DB_PASSWORD}
+    ports:
+      - "15433:5432"
+    volumes:
+      - product-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PRODUCT_DB_USER} -d ${PRODUCT_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - techstore-network
+
   staff-db:
     image: mysql:8.0
     container_name: techstore-staff-db
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD_STAFF}
+      MYSQL_ROOT_PASSWORD: ${STAFF_DB_ROOT_PASSWORD}
       MYSQL_DATABASE: ${STAFF_DB_NAME}
       MYSQL_USER: ${STAFF_DB_USER}
       MYSQL_PASSWORD: ${STAFF_DB_PASSWORD}
     ports:
-      - "3306:3306"
+      - "13306:3306"
     volumes:
       - staff-db-data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${STAFF_DB_ROOT_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
     networks:
       - techstore-network
 
@@ -29,251 +46,23 @@ services:
     image: mysql:8.0
     container_name: techstore-customer-db
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD_CUSTOMER}
+      MYSQL_ROOT_PASSWORD: ${CUSTOMER_DB_ROOT_PASSWORD}
       MYSQL_DATABASE: ${CUSTOMER_DB_NAME}
       MYSQL_USER: ${CUSTOMER_DB_USER}
       MYSQL_PASSWORD: ${CUSTOMER_DB_PASSWORD}
     ports:
-      - "3307:3306"
+      - "13307:3306"
     volumes:
       - customer-db-data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${CUSTOMER_DB_ROOT_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
     networks:
       - techstore-network
 
-  computer-db:
-    image: postgres:15
-    container_name: techstore-computer-db
-    environment:
-      POSTGRES_DB: ${COMPUTER_DB_NAME}
-      POSTGRES_USER: ${COMPUTER_DB_USER}
-      POSTGRES_PASSWORD: ${COMPUTER_DB_PASSWORD}
-    ports:
-      - "15432:5432"
-    volumes:
-      - computer-db-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${COMPUTER_DB_USER} -d ${COMPUTER_DB_NAME}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - techstore-network
-
-  mobile-db:
-    image: postgres:15
-    container_name: techstore-mobile-db
-    environment:
-      POSTGRES_DB: ${MOBILE_DB_NAME}
-      POSTGRES_USER: ${MOBILE_DB_USER}
-      POSTGRES_PASSWORD: ${MOBILE_DB_PASSWORD}
-    ports:
-      - "5433:5432"
-    volumes:
-      - mobile-db-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${MOBILE_DB_USER} -d ${MOBILE_DB_NAME}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - techstore-network
-
-  clothes-db:
-    image: postgres:15
-    container_name: techstore-clothes-db
-    environment:
-      POSTGRES_DB: ${CLOTHES_DB_NAME}
-      POSTGRES_USER: ${CLOTHES_DB_USER}
-      POSTGRES_PASSWORD: ${CLOTHES_DB_PASSWORD}
-    ports:
-      - "5434:5432"
-    volumes:
-      - clothes-db-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${CLOTHES_DB_USER} -d ${CLOTHES_DB_NAME}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - techstore-network
-
-  tablet-db:
-    image: postgres:15
-    container_name: techstore-tablet-db
-    environment:
-      POSTGRES_DB: ${TABLET_DB_NAME}
-      POSTGRES_USER: ${TABLET_DB_USER}
-      POSTGRES_PASSWORD: ${TABLET_DB_PASSWORD}
-    ports:
-      - "5435:5432"
-    volumes:
-      - tablet-db-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${TABLET_DB_USER} -d ${TABLET_DB_NAME}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - techstore-network
-
-  audio-db:
-    image: postgres:15
-    container_name: techstore-audio-db
-    environment:
-      POSTGRES_DB: ${AUDIO_DB_NAME}
-      POSTGRES_USER: ${AUDIO_DB_USER}
-      POSTGRES_PASSWORD: ${AUDIO_DB_PASSWORD}
-    ports:
-      - "5436:5432"
-    volumes:
-      - audio-db-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${AUDIO_DB_USER} -d ${AUDIO_DB_NAME}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - techstore-network
-
-  wearable-db:
-    image: postgres:15
-    container_name: techstore-wearable-db
-    environment:
-      POSTGRES_DB: ${WEARABLE_DB_NAME}
-      POSTGRES_USER: ${WEARABLE_DB_USER}
-      POSTGRES_PASSWORD: ${WEARABLE_DB_PASSWORD}
-    ports:
-      - "5437:5432"
-    volumes:
-      - wearable-db-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${WEARABLE_DB_USER} -d ${WEARABLE_DB_NAME}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - techstore-network
-
-  component-db:
-    image: postgres:15
-    container_name: techstore-component-db
-    environment:
-      POSTGRES_DB: ${COMPONENT_DB_NAME}
-      POSTGRES_USER: ${COMPONENT_DB_USER}
-      POSTGRES_PASSWORD: ${COMPONENT_DB_PASSWORD}
-    ports:
-      - "5438:5432"
-    volumes:
-      - component-db-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${COMPONENT_DB_USER} -d ${COMPONENT_DB_NAME}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - techstore-network
-
-  peripheral-db:
-    image: postgres:15
-    container_name: techstore-peripheral-db
-    environment:
-      POSTGRES_DB: ${PERIPHERAL_DB_NAME}
-      POSTGRES_USER: ${PERIPHERAL_DB_USER}
-      POSTGRES_PASSWORD: ${PERIPHERAL_DB_PASSWORD}
-    ports:
-      - "5439:5432"
-    volumes:
-      - peripheral-db-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${PERIPHERAL_DB_USER} -d ${PERIPHERAL_DB_NAME}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - techstore-network
-
-  monitor-db:
-    image: postgres:15
-    container_name: techstore-monitor-db
-    environment:
-      POSTGRES_DB: ${MONITOR_DB_NAME}
-      POSTGRES_USER: ${MONITOR_DB_USER}
-      POSTGRES_PASSWORD: ${MONITOR_DB_PASSWORD}
-    ports:
-      - "5440:5432"
-    volumes:
-      - monitor-db-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${MONITOR_DB_USER} -d ${MONITOR_DB_NAME}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - techstore-network
-
-  accessory-db:
-    image: postgres:15
-    container_name: techstore-accessory-db
-    environment:
-      POSTGRES_DB: ${ACCESSORY_DB_NAME}
-      POSTGRES_USER: ${ACCESSORY_DB_USER}
-      POSTGRES_PASSWORD: ${ACCESSORY_DB_PASSWORD}
-    ports:
-      - "5441:5432"
-    volumes:
-      - accessory-db-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${ACCESSORY_DB_USER} -d ${ACCESSORY_DB_NAME}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - techstore-network
-
-  charging-db:
-    image: postgres:15
-    container_name: techstore-charging-db
-    environment:
-      POSTGRES_DB: ${CHARGING_DB_NAME}
-      POSTGRES_USER: ${CHARGING_DB_USER}
-      POSTGRES_PASSWORD: ${CHARGING_DB_PASSWORD}
-    ports:
-      - "5442:5432"
-    volumes:
-      - charging-db-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${CHARGING_DB_USER} -d ${CHARGING_DB_NAME}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - techstore-network
-
-  book-db:
-    image: postgres:15
-    container_name: techstore-book-db
-    environment:
-      POSTGRES_DB: ${BOOK_DB_NAME}
-      POSTGRES_USER: ${BOOK_DB_USER}
-      POSTGRES_PASSWORD: ${BOOK_DB_PASSWORD}
-    ports:
-      - "5443:5432"
-    volumes:
-      - book-db-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${BOOK_DB_USER} -d ${BOOK_DB_NAME}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - techstore-network
-
-  # ─── BACKEND SERVICES ──────────────────────
   staff-service:
     build:
       context: ./services/staff-service
@@ -286,10 +75,11 @@ services:
       - DJANGO_DEBUG=${DJANGO_DEBUG}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       - JWT_EXPIRATION_HOURS=${JWT_EXPIRATION_HOURS}
+      - DB_ENGINE=django.db.backends.mysql
       - DB_NAME=${STAFF_DB_NAME}
       - DB_USER=${STAFF_DB_USER}
       - DB_PASSWORD=${STAFF_DB_PASSWORD}
-      - DB_HOST=${STAFF_DB_HOST}
+      - DB_HOST=staff-db
       - DB_PORT=3306
     depends_on:
       staff-db:
@@ -315,23 +105,13 @@ services:
       - DJANGO_DEBUG=${DJANGO_DEBUG}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       - JWT_EXPIRATION_HOURS=${JWT_EXPIRATION_HOURS}
+      - DB_ENGINE=django.db.backends.mysql
       - DB_NAME=${CUSTOMER_DB_NAME}
       - DB_USER=${CUSTOMER_DB_USER}
       - DB_PASSWORD=${CUSTOMER_DB_PASSWORD}
-      - DB_HOST=${CUSTOMER_DB_HOST}
+      - DB_HOST=customer-db
       - DB_PORT=3306
-      - COMPUTER_SERVICE_URL=${COMPUTER_SERVICE_URL}
-      - MOBILE_SERVICE_URL=${MOBILE_SERVICE_URL}
-      - CLOTHES_SERVICE_URL=${CLOTHES_SERVICE_URL}
-      - TABLET_SERVICE_URL=${TABLET_SERVICE_URL}
-      - AUDIO_SERVICE_URL=${AUDIO_SERVICE_URL}
-      - WEARABLE_SERVICE_URL=${WEARABLE_SERVICE_URL}
-      - COMPONENT_SERVICE_URL=${COMPONENT_SERVICE_URL}
-      - PERIPHERAL_SERVICE_URL=${PERIPHERAL_SERVICE_URL}
-      - MONITOR_SERVICE_URL=${MONITOR_SERVICE_URL}
-      - ACCESSORY_SERVICE_URL=${ACCESSORY_SERVICE_URL}
-      - CHARGING_SERVICE_URL=${CHARGING_SERVICE_URL}
-      - BOOK_SERVICE_URL=${BOOK_SERVICE_URL}
+      - PRODUCT_SERVICE_URL=${PRODUCT_SERVICE_URL}
     depends_on:
       customer-db:
         condition: service_healthy
@@ -344,28 +124,18 @@ services:
     networks:
       - techstore-network
 
-  computer-service:
+  identity-service:
     build:
-      context: ./services/computer-service
+      context: ./services/identity-service
       dockerfile: Dockerfile
-    container_name: techstore-computer-service
+    container_name: techstore-identity-service
     ports:
-      - "${COMPUTER_SERVICE_PORT}:8003"
+      - "${IDENTITY_SERVICE_PORT}:8016"
     environment:
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
       - DJANGO_DEBUG=${DJANGO_DEBUG}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - JWT_EXPIRATION_HOURS=${JWT_EXPIRATION_HOURS}
-      - DB_NAME=${COMPUTER_DB_NAME}
-      - DB_USER=${COMPUTER_DB_USER}
-      - DB_PASSWORD=${COMPUTER_DB_PASSWORD}
-      - DB_HOST=${COMPUTER_DB_HOST}
-      - DB_PORT=5432
-    depends_on:
-      computer-db:
-        condition: service_healthy
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8003/health')"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8016/health')"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -373,28 +143,27 @@ services:
     networks:
       - techstore-network
 
-  mobile-service:
+  product-service:
     build:
-      context: ./services/mobile-service
+      context: ./services/product-service
       dockerfile: Dockerfile
-    container_name: techstore-mobile-service
+    container_name: techstore-product-service
     ports:
-      - "${MOBILE_SERVICE_PORT}:8004"
+      - "${PRODUCT_SERVICE_PORT}:8017"
     environment:
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
       - DJANGO_DEBUG=${DJANGO_DEBUG}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - JWT_EXPIRATION_HOURS=${JWT_EXPIRATION_HOURS}
-      - DB_NAME=${MOBILE_DB_NAME}
-      - DB_USER=${MOBILE_DB_USER}
-      - DB_PASSWORD=${MOBILE_DB_PASSWORD}
-      - DB_HOST=${MOBILE_DB_HOST}
-      - DB_PORT=5432
+      - DB_ENGINE=django.db.backends.postgresql
+      - DB_NAME=${PRODUCT_DB_NAME}
+      - DB_USER=${PRODUCT_DB_USER}
+      - DB_PASSWORD=${PRODUCT_DB_PASSWORD}
+      - DB_HOST=${PRODUCT_DB_HOST}
+      - DB_PORT=${PRODUCT_DB_PORT}
     depends_on:
-      mobile-db:
+      product-db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8004/health')"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8017/health')"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -402,28 +171,18 @@ services:
     networks:
       - techstore-network
 
-  clothes-service:
+  inventory-service:
     build:
-      context: ./services/clothes-service
+      context: ./services/inventory-service
       dockerfile: Dockerfile
-    container_name: techstore-clothes-service
+    container_name: techstore-inventory-service
     ports:
-      - "${CLOTHES_SERVICE_PORT}:8005"
+      - "${INVENTORY_SERVICE_PORT}:8018"
     environment:
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
       - DJANGO_DEBUG=${DJANGO_DEBUG}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - JWT_EXPIRATION_HOURS=${JWT_EXPIRATION_HOURS}
-      - DB_NAME=${CLOTHES_DB_NAME}
-      - DB_USER=${CLOTHES_DB_USER}
-      - DB_PASSWORD=${CLOTHES_DB_PASSWORD}
-      - DB_HOST=${CLOTHES_DB_HOST}
-      - DB_PORT=5432
-    depends_on:
-      clothes-db:
-        condition: service_healthy
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8005/health')"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8018/health')"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -431,28 +190,18 @@ services:
     networks:
       - techstore-network
 
-  tablet-service:
+  cart-service:
     build:
-      context: ./services/tablet-service
+      context: ./services/cart-service
       dockerfile: Dockerfile
-    container_name: techstore-tablet-service
+    container_name: techstore-cart-service
     ports:
-      - "${TABLET_SERVICE_PORT}:8007"
+      - "${CART_SERVICE_PORT}:8019"
     environment:
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
       - DJANGO_DEBUG=${DJANGO_DEBUG}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - JWT_EXPIRATION_HOURS=${JWT_EXPIRATION_HOURS}
-      - DB_NAME=${TABLET_DB_NAME}
-      - DB_USER=${TABLET_DB_USER}
-      - DB_PASSWORD=${TABLET_DB_PASSWORD}
-      - DB_HOST=${TABLET_DB_HOST}
-      - DB_PORT=5432
-    depends_on:
-      tablet-db:
-        condition: service_healthy
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8007/health')"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8019/health')"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -460,28 +209,18 @@ services:
     networks:
       - techstore-network
 
-  audio-service:
+  order-service:
     build:
-      context: ./services/audio-service
+      context: ./services/order-service
       dockerfile: Dockerfile
-    container_name: techstore-audio-service
+    container_name: techstore-order-service
     ports:
-      - "${AUDIO_SERVICE_PORT}:8008"
+      - "${ORDER_SERVICE_PORT}:8020"
     environment:
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
       - DJANGO_DEBUG=${DJANGO_DEBUG}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - JWT_EXPIRATION_HOURS=${JWT_EXPIRATION_HOURS}
-      - DB_NAME=${AUDIO_DB_NAME}
-      - DB_USER=${AUDIO_DB_USER}
-      - DB_PASSWORD=${AUDIO_DB_PASSWORD}
-      - DB_HOST=${AUDIO_DB_HOST}
-      - DB_PORT=5432
-    depends_on:
-      audio-db:
-        condition: service_healthy
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8008/health')"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8020/health')"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -489,28 +228,18 @@ services:
     networks:
       - techstore-network
 
-  wearable-service:
+  payment-service:
     build:
-      context: ./services/wearable-service
+      context: ./services/payment-service
       dockerfile: Dockerfile
-    container_name: techstore-wearable-service
+    container_name: techstore-payment-service
     ports:
-      - "${WEARABLE_SERVICE_PORT}:8009"
+      - "${PAYMENT_SERVICE_PORT}:8021"
     environment:
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
       - DJANGO_DEBUG=${DJANGO_DEBUG}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - JWT_EXPIRATION_HOURS=${JWT_EXPIRATION_HOURS}
-      - DB_NAME=${WEARABLE_DB_NAME}
-      - DB_USER=${WEARABLE_DB_USER}
-      - DB_PASSWORD=${WEARABLE_DB_PASSWORD}
-      - DB_HOST=${WEARABLE_DB_HOST}
-      - DB_PORT=5432
-    depends_on:
-      wearable-db:
-        condition: service_healthy
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8009/health')"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8021/health')"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -518,28 +247,18 @@ services:
     networks:
       - techstore-network
 
-  component-service:
+  review-service:
     build:
-      context: ./services/component-service
+      context: ./services/review-service
       dockerfile: Dockerfile
-    container_name: techstore-component-service
+    container_name: techstore-review-service
     ports:
-      - "${COMPONENT_SERVICE_PORT}:8010"
+      - "${REVIEW_SERVICE_PORT}:8022"
     environment:
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
       - DJANGO_DEBUG=${DJANGO_DEBUG}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - JWT_EXPIRATION_HOURS=${JWT_EXPIRATION_HOURS}
-      - DB_NAME=${COMPONENT_DB_NAME}
-      - DB_USER=${COMPONENT_DB_USER}
-      - DB_PASSWORD=${COMPONENT_DB_PASSWORD}
-      - DB_HOST=${COMPONENT_DB_HOST}
-      - DB_PORT=5432
-    depends_on:
-      component-db:
-        condition: service_healthy
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8010/health')"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8022/health')"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -547,152 +266,6 @@ services:
     networks:
       - techstore-network
 
-  peripheral-service:
-    build:
-      context: ./services/peripheral-service
-      dockerfile: Dockerfile
-    container_name: techstore-peripheral-service
-    ports:
-      - "${PERIPHERAL_SERVICE_PORT}:8011"
-    environment:
-      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
-      - DJANGO_DEBUG=${DJANGO_DEBUG}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - JWT_EXPIRATION_HOURS=${JWT_EXPIRATION_HOURS}
-      - DB_NAME=${PERIPHERAL_DB_NAME}
-      - DB_USER=${PERIPHERAL_DB_USER}
-      - DB_PASSWORD=${PERIPHERAL_DB_PASSWORD}
-      - DB_HOST=${PERIPHERAL_DB_HOST}
-      - DB_PORT=5432
-    depends_on:
-      peripheral-db:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8011/health')"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    restart: unless-stopped
-    networks:
-      - techstore-network
-
-  monitor-service:
-    build:
-      context: ./services/monitor-service
-      dockerfile: Dockerfile
-    container_name: techstore-monitor-service
-    ports:
-      - "${MONITOR_SERVICE_PORT}:8012"
-    environment:
-      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
-      - DJANGO_DEBUG=${DJANGO_DEBUG}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - JWT_EXPIRATION_HOURS=${JWT_EXPIRATION_HOURS}
-      - DB_NAME=${MONITOR_DB_NAME}
-      - DB_USER=${MONITOR_DB_USER}
-      - DB_PASSWORD=${MONITOR_DB_PASSWORD}
-      - DB_HOST=${MONITOR_DB_HOST}
-      - DB_PORT=5432
-    depends_on:
-      monitor-db:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8012/health')"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    restart: unless-stopped
-    networks:
-      - techstore-network
-
-  accessory-service:
-    build:
-      context: ./services/accessory-service
-      dockerfile: Dockerfile
-    container_name: techstore-accessory-service
-    ports:
-      - "${ACCESSORY_SERVICE_PORT}:8013"
-    environment:
-      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
-      - DJANGO_DEBUG=${DJANGO_DEBUG}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - JWT_EXPIRATION_HOURS=${JWT_EXPIRATION_HOURS}
-      - DB_NAME=${ACCESSORY_DB_NAME}
-      - DB_USER=${ACCESSORY_DB_USER}
-      - DB_PASSWORD=${ACCESSORY_DB_PASSWORD}
-      - DB_HOST=${ACCESSORY_DB_HOST}
-      - DB_PORT=5432
-    depends_on:
-      accessory-db:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8013/health')"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    restart: unless-stopped
-    networks:
-      - techstore-network
-
-  charging-service:
-    build:
-      context: ./services/charging-service
-      dockerfile: Dockerfile
-    container_name: techstore-charging-service
-    ports:
-      - "${CHARGING_SERVICE_PORT}:8014"
-    environment:
-      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
-      - DJANGO_DEBUG=${DJANGO_DEBUG}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - JWT_EXPIRATION_HOURS=${JWT_EXPIRATION_HOURS}
-      - DB_NAME=${CHARGING_DB_NAME}
-      - DB_USER=${CHARGING_DB_USER}
-      - DB_PASSWORD=${CHARGING_DB_PASSWORD}
-      - DB_HOST=${CHARGING_DB_HOST}
-      - DB_PORT=5432
-    depends_on:
-      charging-db:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8014/health')"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    restart: unless-stopped
-    networks:
-      - techstore-network
-
-  book-service:
-    build:
-      context: ./services/book-service
-      dockerfile: Dockerfile
-    container_name: techstore-book-service
-    ports:
-      - "${BOOK_SERVICE_PORT}:8015"
-    environment:
-      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
-      - DJANGO_DEBUG=${DJANGO_DEBUG}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - JWT_EXPIRATION_HOURS=${JWT_EXPIRATION_HOURS}
-      - DB_NAME=${BOOK_DB_NAME}
-      - DB_USER=${BOOK_DB_USER}
-      - DB_PASSWORD=${BOOK_DB_PASSWORD}
-      - DB_HOST=${BOOK_DB_HOST}
-      - DB_PORT=5432
-    depends_on:
-      book-db:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8015/health')"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    restart: unless-stopped
-    networks:
-      - techstore-network
-
-  # ─── NEO4J (Knowledge Graph) ─────────────────
   neo4j:
     image: neo4j:5-community
     container_name: techstore-neo4j
@@ -700,7 +273,7 @@ services:
       - "7474:7474"
       - "7687:7687"
     environment:
-      - NEO4J_AUTH=${NEO4J_AUTH:-neo4j/techstore123}
+      - NEO4J_AUTH=${NEO4J_AUTH}
     volumes:
       - neo4j-data:/data
     healthcheck:
@@ -725,17 +298,17 @@ services:
       - DB_PATH=/app/data/advisor.sqlite3
       - ARTIFACTS_DIR=/app/artifacts
       - KB_BOOTSTRAP_PATH=/app/advisor/knowledge_base/default_documents.json
-      - COMPUTER_SERVICE_URL=${COMPUTER_SERVICE_URL}
-      - MOBILE_SERVICE_URL=${MOBILE_SERVICE_URL}
-      - CLOTHES_SERVICE_URL=${CLOTHES_SERVICE_URL}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENAI_CHAT_MODEL=${OPENAI_CHAT_MODEL}
       - LLM_PROVIDER=${LLM_PROVIDER}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - GEMINI_MODEL=${GEMINI_MODEL}
-      - NEO4J_URI=${NEO4J_URI:-bolt://neo4j:7687}
-      - NEO4J_USER=${NEO4J_USER:-neo4j}
-      - NEO4J_PASSWORD=${NEO4J_PASSWORD:-techstore123}
+      - PRODUCT_SERVICE_URL=${PRODUCT_SERVICE_URL}
+      - NEO4J_URI=${NEO4J_URI}
+      - NEO4J_USER=${NEO4J_USER}
+      - NEO4J_PASSWORD=${NEO4J_PASSWORD}
+    depends_on:
+      - neo4j
     volumes:
       - advisor-data:/app/data
       - advisor-artifacts:/app/artifacts
@@ -748,7 +321,6 @@ services:
     networks:
       - techstore-network
 
-  # ─── API GATEWAY ────────────────────────────
   gateway:
     build:
       context: ./gateway
@@ -760,37 +332,28 @@ services:
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
       - DJANGO_DEBUG=${DJANGO_DEBUG}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ADVISOR_SERVICE_URL=${ADVISOR_SERVICE_URL}
+      - IDENTITY_SERVICE_URL=${IDENTITY_SERVICE_URL}
+      - PRODUCT_SERVICE_URL=${PRODUCT_SERVICE_URL}
+      - INVENTORY_SERVICE_URL=${INVENTORY_SERVICE_URL}
+      - CART_SERVICE_URL=${CART_SERVICE_URL}
+      - ORDER_SERVICE_URL=${ORDER_SERVICE_URL}
+      - PAYMENT_SERVICE_URL=${PAYMENT_SERVICE_URL}
+      - REVIEW_SERVICE_URL=${REVIEW_SERVICE_URL}
       - STAFF_SERVICE_URL=${STAFF_SERVICE_URL}
       - CUSTOMER_SERVICE_URL=${CUSTOMER_SERVICE_URL}
-      - COMPUTER_SERVICE_URL=${COMPUTER_SERVICE_URL}
-      - MOBILE_SERVICE_URL=${MOBILE_SERVICE_URL}
-      - CLOTHES_SERVICE_URL=${CLOTHES_SERVICE_URL}
-      - TABLET_SERVICE_URL=${TABLET_SERVICE_URL}
-      - AUDIO_SERVICE_URL=${AUDIO_SERVICE_URL}
-      - WEARABLE_SERVICE_URL=${WEARABLE_SERVICE_URL}
-      - COMPONENT_SERVICE_URL=${COMPONENT_SERVICE_URL}
-      - PERIPHERAL_SERVICE_URL=${PERIPHERAL_SERVICE_URL}
-      - MONITOR_SERVICE_URL=${MONITOR_SERVICE_URL}
-      - ACCESSORY_SERVICE_URL=${ACCESSORY_SERVICE_URL}
-      - CHARGING_SERVICE_URL=${CHARGING_SERVICE_URL}
-      - BOOK_SERVICE_URL=${BOOK_SERVICE_URL}
-      - ADVISOR_SERVICE_URL=${ADVISOR_SERVICE_URL}
+      - SERVICES_REGISTRY=${SERVICES_REGISTRY}
     depends_on:
+      - advisor-service
+      - identity-service
+      - product-service
+      - inventory-service
+      - cart-service
+      - order-service
+      - payment-service
+      - review-service
       - staff-service
       - customer-service
-      - computer-service
-      - mobile-service
-      - clothes-service
-      - tablet-service
-      - audio-service
-      - wearable-service
-      - component-service
-      - peripheral-service
-      - monitor-service
-      - accessory-service
-      - charging-service
-      - book-service
-      - advisor-service
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 30s
@@ -800,7 +363,6 @@ services:
     networks:
       - techstore-network
 
-  # ─── FRONTEND ───────────────────────────────
   frontend:
     build:
       context: ./frontend
@@ -814,28 +376,22 @@ services:
       - GATEWAY_URL=${GATEWAY_URL}
     depends_on:
       - gateway
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     restart: unless-stopped
     networks:
       - techstore-network
 
 volumes:
+  product-db-data:
   staff-db-data:
   customer-db-data:
-  computer-db-data:
-  mobile-db-data:
-  clothes-db-data:
-  tablet-db-data:
-  audio-db-data:
-  wearable-db-data:
-  component-db-data:
-  peripheral-db-data:
-  monitor-db-data:
-  accessory-db-data:
-  charging-db-data:
-  book-db-data:
+  neo4j-data:
   advisor-data:
   advisor-artifacts:
-  neo4j-data:
 
 networks:
   techstore-network:

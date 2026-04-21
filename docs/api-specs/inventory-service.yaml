@@ -1,0 +1,47 @@
+openapi: 3.0.3
+info:
+  title: Inventory Service API
+  version: 0.1.0
+servers:
+  - url: http://inventory-service:8018
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+  /api/inventory/:
+    get:
+      summary: List inventory records skeleton
+      responses:
+        '200':
+          description: Inventory list
+    post:
+      summary: Create inventory record skeleton
+      responses:
+        '201':
+          description: Created
+  /api/inventory/{inventory_id}/status/:
+    get:
+      summary: Get inventory status skeleton
+      parameters:
+        - in: path
+          name: inventory_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Status
+    patch:
+      summary: Update inventory status skeleton
+      parameters:
+        - in: path
+          name: inventory_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Updated

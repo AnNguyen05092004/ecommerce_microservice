@@ -1,0 +1,58 @@
+{
+  "generated_at": "2026-04-20T08:17:41.752341+00:00",
+  "rows": 800,
+  "columns": [
+    "entity_id",
+    "views",
+    "list_views",
+    "searches",
+    "cart_adds",
+    "cart_updates",
+    "checkouts",
+    "orders",
+    "reviews",
+    "chat_messages",
+    "buy_score_heuristic",
+    "top_category",
+    "has_order",
+    "behavior_label",
+    "label_confidence",
+    "event_count",
+    "first_event_at",
+    "last_event_at"
+  ],
+  "null_counts": {
+    "entity_id": 0,
+    "views": 0,
+    "list_views": 0,
+    "searches": 0,
+    "cart_adds": 0,
+    "cart_updates": 0,
+    "checkouts": 0,
+    "orders": 0,
+    "reviews": 0,
+    "chat_messages": 0,
+    "buy_score_heuristic": 0,
+    "top_category": 0,
+    "has_order": 0,
+    "behavior_label": 0,
+    "label_confidence": 0,
+    "event_count": 0,
+    "first_event_at": 0,
+    "last_event_at": 0
+  },
+  "duplicate_rows": 0,
+  "label_distribution": {
+    "impulse_buyer": 326,
+    "researcher": 277,
+    "loyal_customer": 195,
+    "window_shopper": 2
+  },
+  "taxonomy": [
+    "impulse_buyer",
+    "researcher",
+    "loyal_customer",
+    "price_sensitive",
+    "window_shopper"
+  ]
+}

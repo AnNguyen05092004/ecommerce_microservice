@@ -1,0 +1,128 @@
+{
+  "artifacts_dir": "/Users/an/Documents/Ptit Docs/Kie\u0302\u0301n tru\u0301c va\u0300 thie\u0302\u0301t ke\u0302\u0301 pm/KIEMTRA01/services/advisor-service/artifacts",
+  "kb": {
+    "mode": "hybrid_tfidf_chunked",
+    "rows": 50,
+    "chunks": 50,
+    "index_path": "/Users/an/Documents/Ptit Docs/Kie\u0302\u0301n tru\u0301c va\u0300 thie\u0302\u0301t ke\u0302\u0301 pm/KIEMTRA01/services/advisor-service/artifacts/kb_hybrid_index.pkl",
+    "graph": {
+      "status": "skipped",
+      "reason": "neo4j_unavailable"
+    }
+  },
+  "behavior": {
+    "behavior_v2": {
+      "mode": "bootstrap_heuristic_fallback",
+      "rows": 0,
+      "classes": [
+        "impulse_buyer",
+        "researcher",
+        "loyal_customer",
+        "price_sensitive",
+        "window_shopper"
+      ],
+      "note": "Dataset parse/train failed during bootstrap: No columns to parse from file"
+    },
+    "behavior_gru": {
+      "mode": "insufficient_data",
+      "rows": 0,
+      "note": "Need \u226510 labeled sequences, got 0."
+    },
+    "behavior_lstm": {
+      "mode": "insufficient_data",
+      "rows": 0,
+      "note": "Need \u226510 labeled sequences, got 0."
+    },
+    "behavior_bilstm": {
+      "mode": "insufficient_data",
+      "rows": 0,
+      "note": "Need \u226510 labeled sequences, got 0."
+    },
+    "production_selection": {
+      "best_model": "mlp",
+      "manifest": {
+        "generated_at": "2026-04-20T04:34:11.420730+00:00",
+        "selected_model": "mlp",
+        "selection_basis": "highest_macro_f1",
+        "selected_model_score": null,
+        "selected_model_accuracy": null,
+        "fallback_model": "mlp",
+        "candidates": [
+          {
+            "name": "mlp",
+            "mode": "bootstrap_heuristic_fallback",
+            "macro_f1": null,
+            "accuracy": null,
+            "rows": 0,
+            "train_rows": 0,
+            "test_rows": 0
+          },
+          {
+            "name": "gru",
+            "mode": "insufficient_data",
+            "macro_f1": null,
+            "accuracy": null,
+            "rows": 0,
+            "train_rows": 0,
+            "test_rows": 0
+          },
+          {
+            "name": "lstm",
+            "mode": "insufficient_data",
+            "macro_f1": null,
+            "accuracy": null,
+            "rows": 0,
+            "train_rows": 0,
+            "test_rows": 0
+          },
+          {
+            "name": "bilstm",
+            "mode": "insufficient_data",
+            "macro_f1": null,
+            "accuracy": null,
+            "rows": 0,
+            "train_rows": 0,
+            "test_rows": 0
+          }
+        ]
+      },
+      "models": {
+        "baseline": {
+          "mode": "not_found"
+        },
+        "mlp": {
+          "mode": "bootstrap_heuristic_fallback",
+          "rows": 0,
+          "classes": [
+            "impulse_buyer",
+            "researcher",
+            "loyal_customer",
+            "price_sensitive",
+            "window_shopper"
+          ],
+          "note": "Dataset parse/train failed during bootstrap: No columns to parse from file"
+        },
+        "gru": {
+          "mode": "insufficient_data",
+          "rows": 0,
+          "note": "Need \u226510 labeled sequences, got 0."
+        },
+        "lstm": {
+          "mode": "insufficient_data",
+          "rows": 0,
+          "note": "Need \u226510 labeled sequences, got 0."
+        },
+        "bilstm": {
+          "mode": "insufficient_data",
+          "rows": 0,
+          "note": "Need \u226510 labeled sequences, got 0."
+        }
+      },
+      "report_files": {
+        "markdown": "/Users/an/Documents/Ptit Docs/Kie\u0302\u0301n tru\u0301c va\u0300 thie\u0302\u0301t ke\u0302\u0301 pm/KIEMTRA01/services/advisor-service/artifacts/model_comparison_report.md",
+        "html": "/Users/an/Documents/Ptit Docs/Kie\u0302\u0301n tru\u0301c va\u0300 thie\u0302\u0301t ke\u0302\u0301 pm/KIEMTRA01/services/advisor-service/artifacts/model_comparison_report.html",
+        "manifest": "/Users/an/Documents/Ptit Docs/Kie\u0302\u0301n tru\u0301c va\u0300 thie\u0302\u0301t ke\u0302\u0301 pm/KIEMTRA01/services/advisor-service/artifacts/behavior_model_manifest.json"
+      }
+    }
+  }
+}

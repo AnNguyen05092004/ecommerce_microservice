@@ -1,0 +1,47 @@
+openapi: 3.0.3
+info:
+  title: Cart Service API
+  version: 0.1.0
+servers:
+  - url: http://cart-service:8019
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+  /api/carts/:
+    get:
+      summary: List carts skeleton
+      responses:
+        '200':
+          description: Cart list
+    post:
+      summary: Create cart skeleton
+      responses:
+        '201':
+          description: Created
+  /api/carts/{cart_id}/status/:
+    get:
+      summary: Get cart status skeleton
+      parameters:
+        - in: path
+          name: cart_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Status
+    patch:
+      summary: Update cart status skeleton
+      parameters:
+        - in: path
+          name: cart_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Updated

@@ -1,0 +1,65 @@
+{
+  "generated_at": "2026-04-20T04:34:15.483460+00:00",
+  "base_url": "http://localhost:8000",
+  "phase": "phase-final",
+  "version": "v2.0",
+  "chat": {
+    "sample_size": 6,
+    "success_count": 6,
+    "failure_count": 0,
+    "latency_ms": {
+      "min": 2160.89,
+      "avg": 4514.47,
+      "p50": 3526.5,
+      "p95": 8978.89,
+      "max": 10385.05
+    },
+    "fallback_rate": 0.1667,
+    "retrieval_relevance_at_k": 1.0,
+    "grounded_answer_rate": 0.6667,
+    "citation_rate": 0.6667,
+    "hallucination_proxy_rate": 0.3333,
+    "evidence_grounded_rate": 0.6667,
+    "source_precision": 0.6667,
+    "semantic_keyword_recall": 0.4583,
+    "exact_phrase_hit_rate": 0.5,
+    "combined_grounding_score": 0.5833,
+    "recommendation_limit": 6,
+    "failures": []
+  },
+  "recommendations": {
+    "sample_size": 4,
+    "success_count": 4,
+    "failure_count": 0,
+    "non_empty_result_rate": 1.0,
+    "latency_ms": {
+      "min": 90.25,
+      "avg": 111.04,
+      "p50": 95.67,
+      "p95": 152.64,
+      "max": 162.58
+    },
+    "failures": []
+  },
+  "semantic_search": {
+    "sample_size": 3,
+    "success_count": 3,
+    "failure_count": 0,
+    "non_empty_result_rate": 1.0,
+    "correct_type_rate": 1.0,
+    "min_results_hit_rate": 1.0,
+    "latency_ms": {
+      "min": 18.08,
+      "avg": 146.15,
+      "p50": 19.19,
+      "p95": 362.98,
+      "max": 401.18
+    },
+    "failures": []
+  },
+  "notes": [
+    "chat.combined_grounding_score blends expected source recall and semantic recall",
+    "recommendations.non_empty_result_rate tracks recommendation usefulness",
+    "semantic_search.correct_type_rate checks semantic retrieval returns expected product types"
+  ]
+}

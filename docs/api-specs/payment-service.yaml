@@ -1,0 +1,47 @@
+openapi: 3.0.3
+info:
+  title: Payment Service API
+  version: 0.1.0
+servers:
+  - url: http://payment-service:8021
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+  /api/payments/:
+    get:
+      summary: List payments skeleton
+      responses:
+        '200':
+          description: Payment list
+    post:
+      summary: Create payment skeleton
+      responses:
+        '201':
+          description: Created
+  /api/payments/{payment_id}/status/:
+    get:
+      summary: Get payment status skeleton
+      parameters:
+        - in: path
+          name: payment_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Status
+    patch:
+      summary: Update payment status skeleton
+      parameters:
+        - in: path
+          name: payment_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Updated

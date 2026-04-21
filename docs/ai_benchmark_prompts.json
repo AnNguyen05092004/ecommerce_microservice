@@ -145,5 +145,37 @@
         {
             "limit": 5
         }
+    ],
+    "semantic_cases": [
+        {
+            "language": "vi",
+            "query": "pin du phong sac nhanh",
+            "product_type": "charging",
+            "expected_product_types": [
+                "charging"
+            ],
+            "min_results": 3,
+            "limit": 6
+        },
+        {
+            "language": "vi",
+            "query": "phu kien dien thoai",
+            "product_type": "accessory",
+            "expected_product_types": [
+                "accessory"
+            ],
+            "min_results": 3,
+            "limit": 6
+        },
+        {
+            "language": "en",
+            "query": "office ultrabook",
+            "product_type": "computer",
+            "expected_product_types": [
+                "computer"
+            ],
+            "min_results": 2,
+            "limit": 6
+        }
     ]
 }

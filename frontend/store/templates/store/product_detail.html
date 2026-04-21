@@ -332,6 +332,94 @@
         scrollToBottom();
       }
 
+      function formatPrice(value) {
+        const amount = Number(value || 0);
+        if (!Number.isFinite(amount) || amount <= 0) {
+          return "Lien he";
+        }
+        return amount.toLocaleString("vi-VN") + "đ";
+      }
+
+      function behaviorLabel(label) {
+        const mapping = {
+          impulse_buyer: "mua nhanh",
+          researcher: "nghien cuu ky",
+          loyal_customer: "khach quay lai",
+          price_sensitive: "nhay gia",
+          window_shopper: "tham khao",
+          uncertain: "chua ro",
+        };
+        return mapping[label] || (label || "chua ro");
+      }
+
+      function appendInsight(summary) {
+        const profile = summary && summary.behavior_profile;
+        if (!profile || !profile.label) {
+          return;
+        }
+
+        const card = document.createElement("div");
+        card.className = "advisor-chat-insight";
+
+        const title = document.createElement("strong");
+        title.className = "advisor-chat-insight-title";
+        title.textContent = "AI dang can chinh theo hanh vi cua ban";
+
+        const body = document.createElement("p");
+        body.className = "advisor-chat-insight-text";
+        body.textContent = `Ho so hien tai: ${behaviorLabel(profile.label)} • do tin cay ${Math.round(Number(profile.confidence || 0) * 100)}%`;
+
+        const meta = document.createElement("div");
+        meta.className = "advisor-chat-insight-meta";
+        meta.textContent = `Model: ${String(profile.selected_model || profile.mode || "mlp").toUpperCase()}${profile.selected_model_score ? ` • F1 ${profile.selected_model_score}` : ""}`;
+
+        card.appendChild(title);
+        card.appendChild(body);
+        card.appendChild(meta);
+        messages.appendChild(card);
+        scrollToBottom();
+      }
+
+      function appendRecommendations(items) {
+        if (!Array.isArray(items) || !items.length) {
+          return;
+        }
+
+        const wrap = document.createElement("div");
+        wrap.className = "advisor-chat-recommendations";
+
+        const title = document.createElement("strong");
+        title.className = "advisor-chat-recommendations-title";
+        title.textContent = "Goi y lien quan";
+        wrap.appendChild(title);
+
+        items.slice(0, 3).forEach(function (item) {
+          const link = document.createElement("a");
+          link.className = "advisor-recommendation-card";
+          link.href = `/products/${item.product_type || productType}/${item.id}`;
+
+          const name = document.createElement("span");
+          name.className = "advisor-recommendation-name";
+          name.textContent = item.name || "San pham";
+
+          const meta = document.createElement("span");
+          meta.className = "advisor-recommendation-meta";
+          meta.textContent = `${String(item.product_type || productType).toUpperCase()} • ${formatPrice(item.price)}`;
+
+          const reason = document.createElement("span");
+          reason.className = "advisor-recommendation-reason";
+          reason.textContent = item.reason || "Phu hop voi nhu cau dang xem";
+
+          link.appendChild(name);
+          link.appendChild(meta);
+          link.appendChild(reason);
+          wrap.appendChild(link);
+        });
+
+        messages.appendChild(wrap);
+        scrollToBottom();
+      }
+
       function renderDebug(payload) {
         if (!debugEnabled) {
           return;
@@ -419,6 +507,8 @@
           const answer = payload.answer || payload.error || "Khong co phan hoi tu AI advisor.";
           typingLine.remove();
           appendMessage("bot", answer);
+          appendInsight(payload.summary || {});
+          appendRecommendations(payload.recommendations || []);
           appendSources(payload.sources || payload.context_documents || []);
           renderDebug(payload);
 

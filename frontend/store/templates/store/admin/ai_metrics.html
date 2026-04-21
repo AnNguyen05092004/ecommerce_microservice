@@ -57,8 +57,21 @@
         <td>LLM model</td>
         <td>{{ llm_model }}</td>
       </tr>
+      <tr>
+        <td>Behavior model</td>
+        <td>{{ behavior_model|upper }}{% if behavior_model_score %} • F1 {{ behavior_model_score }}{% endif %}</td>
+      </tr>
     </tbody>
   </table>
+</div>
+
+<div class="card" style="margin-top: 16px;">
+  <div class="card-title">Evaluation Reports</div>
+  <p>Xem trực tiếp report HTML da sinh tu pipeline train va benchmark.</p>
+  <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:12px;">
+    <a href="/admin/ai-reports/model-comparison" target="_blank" rel="noopener" class="btn-primary" style="text-decoration:none; padding:10px 14px; border-radius:10px; display:inline-flex;">Model Comparison Report</a>
+    <a href="/admin/ai-reports/benchmark" target="_blank" rel="noopener" class="btn-primary" style="text-decoration:none; padding:10px 14px; border-radius:10px; display:inline-flex;">Benchmark Evaluation Report</a>
+  </div>
 </div>
 
 <div class="card" style="margin-top: 16px;">

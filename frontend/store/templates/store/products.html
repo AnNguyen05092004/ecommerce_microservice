@@ -232,12 +232,56 @@
         {% endif %}
       </nav>
       {% endif %}
+
+      <section class="advisor-section" style="margin-top: 18px;">
+        <div class="advisor-head">
+          <div>
+            <h2>{% if selected_search %}Gợi ý liên quan sau tìm kiếm{% else %}Gợi ý AI dành cho bạn{% endif %}</h2>
+            <p>Đề xuất theo hành vi gần đây{% if selected_search %} và từ khóa bạn vừa tìm{% endif %}.</p>
+          </div>
+          {% if advisor_summary.top_categories %}
+          <span class="advisor-chip">Quan tâm nhiều: {{ advisor_summary.top_categories|join:", " }}</span>
+          {% endif %}
+        </div>
+        <div class="products-grid">
+          {% for item in advisor_recommendations %}
+          <a class="product-link" href="{{ item.detail_url }}">
+            <article class="product-card advisor-card">
+              <div class="image-wrap">
+                <img src="{{ item.image }}" alt="{{ item.name }}" />
+              </div>
+              <div class="product-body">
+                <div class="meta">{{ item.brand }} • {{ item.product_type|upper }}</div>
+                <h3>{{ item.name }}</h3>
+                <div class="price-line"><strong>{{ item.price }}</strong></div>
+                <p class="advisor-reason">{{ item.reason }}</p>
+              </div>
+            </article>
+          </a>
+          {% empty %}
+          <div class="empty-state">
+            <i data-lucide="sparkles"></i>
+            <h3>Chưa có gợi ý cá nhân hóa</h3>
+            <p>Hãy tiếp tục tìm kiếm hoặc xem thêm sản phẩm để AI học tốt hơn.</p>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
     </section>
   </main>
 
   <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="{% static 'store/js/advisor-widget.js' %}"></script>
   <script>
     lucide.createIcons();
+
+    initAdvisorWidget({
+      pageName: "products",
+      chatUrl: "/advisor/chat",
+      eventUrl: "/advisor/event",
+      storageKey: "advisor-chat-history-products",
+      suggestionChips: ["Goi y laptop van phong", "Dien thoai pin trau", "Phu kien duoi 500k"],
+    });
 
     (function () {
       const input = document.getElementById("product-search-input");

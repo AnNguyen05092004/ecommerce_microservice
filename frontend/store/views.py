@@ -2,81 +2,57 @@ import json
 import requests
 from urllib.parse import urlencode
 from django.conf import settings
-from django.http import Http404, JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.csrf import csrf_exempt
 
 
 PRODUCT_TYPE_CONFIG = {
     "computer": {
-        "service": "computer-service",
-        "resource": "computers",
         "label": "Laptop",
         "badge": "Laptop",
     },
     "mobile": {
-        "service": "mobile-service",
-        "resource": "mobiles",
         "label": "Điện thoại",
         "badge": "Mobile",
     },
     "clothes": {
-        "service": "clothes-service",
-        "resource": "clothes",
         "label": "Quần áo",
         "badge": "Quần áo",
     },
     "tablet": {
-        "service": "tablet-service",
-        "resource": "tablets",
         "label": "Tablet",
         "badge": "Tablet",
     },
     "audio": {
-        "service": "audio-service",
-        "resource": "audios",
         "label": "Âm thanh",
         "badge": "Audio",
     },
     "wearable": {
-        "service": "wearable-service",
-        "resource": "wearables",
         "label": "Wearable",
         "badge": "Wearable",
     },
     "component": {
-        "service": "component-service",
-        "resource": "components",
         "label": "Linh kiện",
         "badge": "Component",
     },
     "peripheral": {
-        "service": "peripheral-service",
-        "resource": "peripherals",
         "label": "Phụ kiện PC",
         "badge": "Peripheral",
     },
     "monitor": {
-        "service": "monitor-service",
-        "resource": "monitors",
         "label": "Màn hình",
         "badge": "Monitor",
     },
     "accessory": {
-        "service": "accessory-service",
-        "resource": "accessories",
         "label": "Phụ kiện điện thoại",
         "badge": "Accessory",
     },
     "charging": {
-        "service": "charging-service",
-        "resource": "chargings",
         "label": "Sạc và pin",
         "badge": "Charging",
     },
     "book": {
-        "service": "book-service",
-        "resource": "books",
         "label": "Sách",
         "badge": "Book",
     },
@@ -228,6 +204,21 @@ def _fetch_paginated(path):
         return {"results": [], "next": None, "count": 0}
 
 
+def _fetch_catalog_products(query):
+    params = {
+        "type": query.get("type", "all"),
+        "search": query.get("search", "").strip(),
+        "brand": query.get("brand", "").strip(),
+        "category": query.get("category", "").strip(),
+        "price_min": query.get("price_min", ""),
+        "price_max": query.get("price_max", ""),
+        "ordering": query.get("ordering", "-created_at"),
+        "page": 1,
+        "page_size": 96,
+    }
+    return _fetch_paginated(f"/api/catalog/products/?{urlencode(params)}")
+
+
 def _fetch_detail(path):
     url = f"{settings.GATEWAY_URL}{path}"
     try:
@@ -286,6 +277,22 @@ def _fetch_detail_auth(path, headers):
         return None
     except (requests.RequestException, ValueError):
         return None
+
+
+def _fetch_html_auth(request, path):
+    headers = _session_auth_headers(request) or {}
+    try:
+        response = requests.get(
+            f"{settings.GATEWAY_URL}{path}",
+            headers=headers,
+            timeout=8,
+        )
+    except requests.RequestException:
+        return None, "Khong the ket noi toi advisor service."
+
+    if response.status_code != 200:
+        return None, f"Khong the tai report AI ({response.status_code})."
+    return response.text, ""
 
 
 def _api_request_auth(request, method, path, payload=None):
@@ -395,6 +402,12 @@ def _normalize_advisor_products(items):
         product_type = item.get("product_type") or "computer"
         if not product_id:
             continue
+
+        # Skip stale recommendation links that no longer exist in catalog.
+        detail = _fetch_detail(f"/api/catalog/products/{product_type}/{product_id}/")
+        if not detail:
+            continue
+
         normalized.append(
             {
                 "id": product_id,
@@ -575,7 +588,7 @@ def _service_pages(ptype, cfg, page_size=12):
     page = 1
     while True:
         payload = _fetch_paginated(
-            f"/api/{cfg['service']}/{cfg['resource']}/?page={page}&page_size={page_size}&ordering=-created_at"
+            f"/api/catalog/products/?type={ptype}&page={page}&page_size={page_size}&ordering=-created_at"
         )
         rows = payload.get("results") or []
         if not rows:
@@ -837,6 +850,14 @@ def _handle_add_to_cart(request, product_type, product_id):
         return "error", "Không thể kết nối đến giỏ hàng. Thử lại sau."
 
     if response.status_code in (200, 201):
+        _advisor_track_event(
+            request,
+            "add_to_cart",
+            product_type=product_type,
+            product_id=product_id,
+            quantity=quantity,
+            metadata={"page": "product_detail"},
+        )
         return "success", "Đã thêm sản phẩm vào giỏ hàng."
     return "error", _extract_api_error(response)
 
@@ -860,6 +881,14 @@ def _build_detail_context(product_type, product):
     return context
 
 
+def _resolve_product_across_types(product_id):
+    for ptype in PRODUCT_TYPE_CONFIG.keys():
+        detail = _fetch_detail(f"/api/catalog/products/{ptype}/{product_id}/")
+        if isinstance(detail, dict) and detail.get("id"):
+            return ptype, detail
+    return "", None
+
+
 def _fetch_products_with_filters(query):
     product_type = query.get("type", "all")
     search = query.get("search", "").strip()
@@ -870,39 +899,21 @@ def _fetch_products_with_filters(query):
     stock_min = _to_number(query.get("stock_min"))
     stock_max = _to_number(query.get("stock_max"))
     sort_by = query.get("sort", "newest")
-    page_size = 8
-    page = query.get("page", "1")
-    try:
-        page = int(page)
-    except ValueError:
-        page = 1
-    page = max(1, page)
+    ordering_map = {
+        "newest": "-created_at",
+        "oldest": "created_at",
+        "price_asc": "price",
+        "price_desc": "-price",
+        "name_asc": "name",
+        "name_desc": "-name",
+        "stock_asc": "stock",
+        "stock_desc": "-stock",
+    }
+    catalog_query = query.copy()
+    catalog_query["ordering"] = ordering_map.get(sort_by, "-created_at")
+    payload = _fetch_catalog_products(catalog_query)
 
-    selected_types = [
-        ptype for ptype in PRODUCT_TYPE_CONFIG if product_type in ("all", ptype)
-    ]
-
-    # For default newest sorting, perform lazy k-way merge to fetch only enough
-    # records for current page instead of loading all pages from all services.
-    if sort_by == "newest":
-        target_count = page * page_size
-        return _merge_newest_products(
-            selected_types,
-            selected_category,
-            price_min,
-            price_max,
-            search,
-            brand,
-            stock_min,
-            stock_max,
-            target_count,
-        )
-
-    cards = []
-    for ptype in selected_types:
-        cfg = PRODUCT_TYPE_CONFIG[ptype]
-        for chunk in _service_pages(ptype, cfg):
-            cards.extend(chunk)
+    cards = _normalize_semantic_products(payload.get("results"))
 
     cards = _filter_products(
         cards,
@@ -958,9 +969,10 @@ def _normalize_semantic_products(products):
 
 
 def home_view(request):
-    computers = _fetch_list("/api/computer-service/computers/?page_size=4")
-    mobiles = _fetch_list("/api/mobile-service/mobiles/?page_size=4")
-    clothes_list = _fetch_list("/api/clothes-service/clothes/?page_size=2")
+    catalog_items = _fetch_list("/api/catalog/products/?page_size=8")
+    computers = [p for p in catalog_items if p.get("product_type") == "computer"]
+    mobiles = [p for p in catalog_items if p.get("product_type") == "mobile"]
+    clothes_list = [p for p in catalog_items if p.get("product_type") == "clothes"]
     advisor_payload = _fetch_advisor_recommendations(request, limit=4)
     _advisor_track_event(request, "product_list_view", metadata={"page": "home"})
 
@@ -1243,12 +1255,30 @@ def cart_view(request):
 
     cart_payload = _fetch_cart(request) or {"items": [], "total_amount": 0}
     items = _normalize_cart_items(cart_payload.get("items") or [])
+    seed_product_type = ""
+    seed_product_id = None
+    if items:
+        seed_product_type = items[0].get("product_type") or ""
+        seed_product_id = items[0].get("product_id")
+
+    advisor_payload = _fetch_advisor_recommendations(
+        request,
+        limit=4,
+        product_type=seed_product_type,
+        product_id=seed_product_id,
+    )
+
     context = {
         "cart_items": items,
         "cart_total": _format_vnd(cart_payload.get("total_amount")),
         "cart_count": _cart_item_count(cart_payload),
         "flash_message": request.GET.get("msg", ""),
         "flash_type": request.GET.get("msg_type", ""),
+        "advisor_recommendations": _normalize_advisor_products(
+            advisor_payload.get("results")
+        ),
+        "advisor_summary": advisor_payload.get("summary") or {},
+        "advisor_session_id": _advisor_session_id(request),
     }
     context.update(_auth_context(request))
     return render(request, "store/cart.html", context)
@@ -1315,11 +1345,11 @@ def products_view(request):
         page = 1
 
     paginated = _paginate_products(products, page, page_size=8)
-    categories = []
-    for ptype, cfg in PRODUCT_TYPE_CONFIG.items():
-        categories += _normalize_categories(
-            _fetch_list(f"/api/{cfg['service']}/categories/"), ptype
-        )
+    raw_cats = _fetch_list("/api/catalog/categories/")
+    effective_type = (
+        selected_type if selected_type and selected_type != "all" else "all"
+    )
+    categories = _normalize_categories(raw_cats, effective_type)
 
     brands = sorted({p.get("brand", "") for p in products if p.get("brand")})
     pagination_links = _pagination_links(
@@ -1355,6 +1385,12 @@ def products_view(request):
         },
     )
 
+    advisor_payload = _fetch_advisor_recommendations(
+        request,
+        limit=6,
+        product_type="" if selected_type == "all" else selected_type,
+    )
+
     context = {
         "products": paginated["items"],
         "total_products": paginated["total"],
@@ -1377,6 +1413,11 @@ def products_view(request):
         "has_next": paginated["has_next"],
         "prev_query": prev_query,
         "next_query": next_query,
+        "advisor_recommendations": _normalize_advisor_products(
+            advisor_payload.get("results")
+        ),
+        "advisor_summary": advisor_payload.get("summary") or {},
+        "advisor_session_id": _advisor_session_id(request),
     }
     context.update(_auth_context(request))
     return render(request, "store/products.html", context)
@@ -1394,10 +1435,21 @@ def product_detail_view(request, product_type, product_id):
     flash_message = request.GET.get("msg", "")
     flash_type = request.GET.get("msg_type", "")
 
-    cfg = PRODUCT_TYPE_CONFIG[product_type]
-    detail_path = f"/api/{cfg['service']}/{cfg['resource']}/{product_id}/"
+    detail_path = f"/api/catalog/products/{product_type}/{product_id}/"
     product = _fetch_detail(detail_path)
     if not product:
+        resolved_type, resolved_product = _resolve_product_across_types(product_id)
+        if resolved_product and resolved_type:
+            if request.method == "POST":
+                query = urlencode(
+                    {
+                        "msg_type": "error",
+                        "msg": "San pham da duoc chuyen sang nhom khac.",
+                    }
+                )
+                return redirect(f"/products/{resolved_type}/{product_id}?{query}")
+            return redirect(f"/products/{resolved_type}/{product_id}")
+
         fallback_product = next(
             (
                 p
@@ -1762,8 +1814,8 @@ def staff_dashboard_view(request):
     product_counts = {}
     low_stock_items = []
     low_stock_by_type = {}
-    for ptype, cfg in PRODUCT_TYPE_CONFIG.items():
-        rows = _fetch_list(f"/api/{cfg['service']}/{cfg['resource']}/")
+    for ptype in PRODUCT_TYPE_CONFIG.keys():
+        rows = _fetch_list(f"/api/catalog/products/?type={ptype}&page_size=1000")
         rows = rows if isinstance(rows, list) else []
         product_counts[ptype] = len(rows)
         low_stock_by_type[ptype] = 0
@@ -1893,6 +1945,12 @@ def staff_ai_metrics_view(request):
         or metrics_payload.get("health", "unknown"),
         "llm_provider": (health_payload.get("llm") or {}).get("provider", "unknown"),
         "llm_model": (health_payload.get("llm") or {}).get("model", "unknown"),
+        "behavior_model": (health_payload.get("behavior_model") or {}).get(
+            "selected_model", "mlp"
+        ),
+        "behavior_model_score": (health_payload.get("behavior_model") or {}).get(
+            "selected_model_score"
+        ),
         "events": events,
         "metrics_raw": metrics_data,
         "errors_raw": errors,
@@ -1902,471 +1960,28 @@ def staff_ai_metrics_view(request):
 
 
 @_staff_required
-def staff_products_computer_view(request):
-    """Manage computer products."""
-    if request.method == "POST":
-        action = request.POST.get("action", "")
-
-        if action == "quick_stock":
-            product_id_raw = request.POST.get("product_id", "0")
-            stock_raw = request.POST.get("stock", "0")
-            try:
-                product_id = int(product_id_raw)
-                stock = int(stock_raw)
-            except ValueError:
-                query = urlencode({"error": "Dữ liệu số lượng không hợp lệ"})
-                return redirect(f"/staff/products/computer?{query}")
-
-            if product_id <= 0 or stock < 0:
-                query = urlencode({"error": "ID hoặc số lượng không hợp lệ"})
-                return redirect(f"/staff/products/computer?{query}")
-
-            headers = _staff_auth_headers(request)
-            if headers:
-                try:
-                    response = requests.patch(
-                        f"{settings.GATEWAY_URL}/api/computer-service/computers/{product_id}/stock/",
-                        json={"stock": stock},
-                        headers=headers,
-                        timeout=5,
-                    )
-                    if response.status_code == 200:
-                        query = urlencode({"msg": "Đã cập nhật số lượng"})
-                        return redirect(f"/staff/products/computer?{query}")
-                except requests.RequestException:
-                    pass
-
-            query = urlencode({"error": "Lỗi khi cập nhật số lượng"})
-            return redirect(f"/staff/products/computer?{query}")
-
-        if action == "delete":
-            product_id_raw = request.POST.get("product_id", "0")
-            try:
-                product_id = int(product_id_raw)
-            except ValueError:
-                product_id = 0
-
-            if product_id <= 0:
-                query = urlencode({"error": "ID sản phẩm không hợp lệ"})
-                return redirect(f"/staff/products/computer?{query}")
-
-            headers = _staff_auth_headers(request)
-            if headers:
-                try:
-                    response = requests.delete(
-                        f"{settings.GATEWAY_URL}/api/computer-service/computers/{product_id}/",
-                        headers=headers,
-                        timeout=5,
-                    )
-                    if response.status_code == 204:
-                        query = urlencode({"msg": "Đã xóa sản phẩm"})
-                        return redirect(f"/staff/products/computer?{query}")
-                except requests.RequestException:
-                    pass
-
-            query = urlencode({"error": "Lỗi khi xóa sản phẩm"})
-            return redirect(f"/staff/products/computer?{query}")
-
-        if action == "add":
-            # Handle add product
-            product_data = {
-                "name": request.POST.get("name", ""),
-                "brand": request.POST.get("brand", ""),
-                "price": int(float(request.POST.get("price", 0))),
-                "stock": int(request.POST.get("stock", 0)),
-                "description": request.POST.get("description", ""),
-                "category_id": int(request.POST.get("category", 0)),
-                "specs": {
-                    "cpu": request.POST.get("cpu", ""),
-                    "ram": request.POST.get("ram", ""),
-                    "storage": request.POST.get("storage", ""),
-                    "gpu": request.POST.get("gpu", ""),
-                    "screen_size": request.POST.get("screen_size", ""),
-                    "os": request.POST.get("os", ""),
-                },
-                "image": request.POST.get("image", ""),
-            }
-
-            headers = _staff_auth_headers(request)
-            if headers:
-                try:
-                    response = requests.post(
-                        f"{settings.GATEWAY_URL}/api/computer-service/computers/",
-                        json=product_data,
-                        headers=headers,
-                        timeout=5,
-                    )
-                    if response.status_code == 201:
-                        query = urlencode({"msg": "Đã thêm sản phẩm thành công"})
-                        return redirect(f"/staff/products/computer?{query}")
-                except requests.RequestException:
-                    pass
-
-            query = urlencode({"error": "Lỗi khi thêm sản phẩm"})
-            return redirect(f"/staff/products/computer?{query}")
-
-        if action == "update":
-            product_id_raw = request.POST.get("product_id", "0")
-            try:
-                product_id = int(product_id_raw)
-            except ValueError:
-                product_id = 0
-
-            if product_id <= 0:
-                query = urlencode({"error": "ID sản phẩm không hợp lệ"})
-                return redirect(f"/staff/products/computer?{query}")
-
-            update_data = {
-                "name": request.POST.get("name", ""),
-                "brand": request.POST.get("brand", ""),
-                "price": int(float(request.POST.get("price", 0))),
-                "stock": int(request.POST.get("stock", 0)),
-                "description": request.POST.get("description", ""),
-                "category_id": int(request.POST.get("category", 0)),
-                "specs": {
-                    "cpu": request.POST.get("cpu", ""),
-                    "ram": request.POST.get("ram", ""),
-                    "storage": request.POST.get("storage", ""),
-                    "gpu": request.POST.get("gpu", ""),
-                    "screen_size": request.POST.get("screen_size", ""),
-                    "os": request.POST.get("os", ""),
-                },
-                "image": request.POST.get("image", ""),
-            }
-
-            headers = _staff_auth_headers(request)
-            if headers:
-                try:
-                    response = requests.put(
-                        f"{settings.GATEWAY_URL}/api/computer-service/computers/{product_id}/",
-                        json=update_data,
-                        headers=headers,
-                        timeout=5,
-                    )
-                    if response.status_code == 200:
-                        query = urlencode({"msg": "Đã cập nhật sản phẩm thành công"})
-                        return redirect(f"/staff/products/computer?{query}")
-                except requests.RequestException:
-                    pass
-
-            query = urlencode({"error": "Lỗi khi cập nhật sản phẩm"})
-            return redirect(f"/staff/products/computer?{query}")
-
-    # Fetch categories and products
-    categories = _fetch_list("/api/computer-service/categories/")
-
-    selected_search = request.GET.get("search", "").strip()
-    selected_brand = request.GET.get("brand", "").strip()
-    selected_category = request.GET.get("category", "").strip()
-    selected_price_min = request.GET.get("price_min", "").strip()
-    selected_price_max = request.GET.get("price_max", "").strip()
-    selected_stock_min = request.GET.get("stock_min", "").strip()
-    selected_stock_max = request.GET.get("stock_max", "").strip()
-    selected_sort = request.GET.get("sort", "newest").strip() or "newest"
-
-    params = ["page_size=300"]
-    if selected_search:
-        params.append(f"search={selected_search}")
-    if selected_brand:
-        params.append(f"brand={selected_brand}")
-    if selected_category:
-        params.append(f"category={selected_category}")
-    if selected_price_min:
-        params.append(f"price_min={selected_price_min}")
-    if selected_price_max:
-        params.append(f"price_max={selected_price_max}")
-
-    ordering_map = {
-        "newest": "-created_at",
-        "oldest": "created_at",
-        "price_asc": "price",
-        "price_desc": "-price",
-        "name_asc": "name",
-        "name_desc": "-name",
-    }
-    ordering = ordering_map.get(selected_sort)
-    if ordering:
-        params.append(f"ordering={ordering}")
-
-    products = _fetch_list("/api/computer-service/computers/?" + "&".join(params))
-    stock_min = _to_number(selected_stock_min)
-    stock_max = _to_number(selected_stock_max)
-    products = _apply_staff_stock_filter_and_sort(
-        products if isinstance(products, list) else [],
-        stock_min,
-        stock_max,
-        selected_sort,
+def staff_ai_report_view(request, report_key):
+    html, error = _fetch_html_auth(
+        request,
+        f"/api/advisor-service/ai/reports/{report_key}/",
     )
+    if error:
+        return HttpResponse(
+            f"<html><body><h1>AI Report Unavailable</h1><p>{error}</p></body></html>",
+            content_type="text/html; charset=utf-8",
+            status=502,
+        )
+    return HttpResponse(html, content_type="text/html; charset=utf-8")
 
-    msg = request.GET.get("msg", "")
-    error = request.GET.get("error", "")
-    edit_id_raw = request.GET.get("edit", "")
-    try:
-        edit_id = int(edit_id_raw) if edit_id_raw else 0
-    except ValueError:
-        edit_id = 0
 
-    edit_product = None
-    if edit_id > 0:
-        edit_product = _fetch_detail(f"/api/computer-service/computers/{edit_id}/")
-
-    context = {
-        "product_type": "computer",
-        "product_type_vn": "Laptop",
-        "staff_products_path": "/staff/products/computer",
-        "products": products,
-        "categories": categories if isinstance(categories, list) else [],
-        "edit_product": edit_product if isinstance(edit_product, dict) else None,
-        "brands": sorted(
-            {p.get("brand") for p in products if isinstance(p, dict) and p.get("brand")}
-        ),
-        "selected_search": selected_search,
-        "selected_brand": selected_brand,
-        "selected_category": selected_category,
-        "selected_price_min": selected_price_min,
-        "selected_price_max": selected_price_max,
-        "selected_stock_min": selected_stock_min,
-        "selected_stock_max": selected_stock_max,
-        "selected_sort": selected_sort,
-        "message": msg,
-        "error": error,
-        "auth_user_name": request.session.get("auth_user_name", ""),
-    }
-    return render(request, "store/staff/products.html", context)
+@_staff_required
+def staff_products_computer_view(request):
+    return _staff_products_generic_view(request, "computer")
 
 
 @_staff_required
 def staff_products_mobile_view(request):
-    """Manage mobile products."""
-    if request.method == "POST":
-        action = request.POST.get("action", "")
-
-        if action == "quick_stock":
-            product_id_raw = request.POST.get("product_id", "0")
-            stock_raw = request.POST.get("stock", "0")
-            try:
-                product_id = int(product_id_raw)
-                stock = int(stock_raw)
-            except ValueError:
-                query = urlencode({"error": "Dữ liệu số lượng không hợp lệ"})
-                return redirect(f"/staff/products/mobile?{query}")
-
-            if product_id <= 0 or stock < 0:
-                query = urlencode({"error": "ID hoặc số lượng không hợp lệ"})
-                return redirect(f"/staff/products/mobile?{query}")
-
-            headers = _staff_auth_headers(request)
-            if headers:
-                try:
-                    response = requests.patch(
-                        f"{settings.GATEWAY_URL}/api/mobile-service/mobiles/{product_id}/stock/",
-                        json={"stock": stock},
-                        headers=headers,
-                        timeout=5,
-                    )
-                    if response.status_code == 200:
-                        query = urlencode({"msg": "Đã cập nhật số lượng"})
-                        return redirect(f"/staff/products/mobile?{query}")
-                except requests.RequestException:
-                    pass
-
-            query = urlencode({"error": "Lỗi khi cập nhật số lượng"})
-            return redirect(f"/staff/products/mobile?{query}")
-
-        if action == "delete":
-            product_id_raw = request.POST.get("product_id", "0")
-            try:
-                product_id = int(product_id_raw)
-            except ValueError:
-                product_id = 0
-
-            if product_id <= 0:
-                query = urlencode({"error": "ID sản phẩm không hợp lệ"})
-                return redirect(f"/staff/products/mobile?{query}")
-
-            headers = _staff_auth_headers(request)
-            if headers:
-                try:
-                    response = requests.delete(
-                        f"{settings.GATEWAY_URL}/api/mobile-service/mobiles/{product_id}/",
-                        headers=headers,
-                        timeout=5,
-                    )
-                    if response.status_code == 204:
-                        query = urlencode({"msg": "Đã xóa sản phẩm"})
-                        return redirect(f"/staff/products/mobile?{query}")
-                except requests.RequestException:
-                    pass
-
-            query = urlencode({"error": "Lỗi khi xóa sản phẩm"})
-            return redirect(f"/staff/products/mobile?{query}")
-
-        if action == "add":
-            # Handle add product
-            product_data = {
-                "name": request.POST.get("name", ""),
-                "brand": request.POST.get("brand", ""),
-                "price": int(float(request.POST.get("price", 0))),
-                "stock": int(request.POST.get("stock", 0)),
-                "description": request.POST.get("description", ""),
-                "category_id": int(request.POST.get("category", 0)),
-                "specs": {
-                    "screen_size": request.POST.get("screen_size", ""),
-                    "battery": request.POST.get("battery", ""),
-                    "camera": request.POST.get("camera", ""),
-                    "storage": request.POST.get("storage", ""),
-                    "ram": request.POST.get("ram", ""),
-                    "os": request.POST.get("os", ""),
-                },
-                "image": request.POST.get("image", ""),
-            }
-
-            headers = _staff_auth_headers(request)
-            if headers:
-                try:
-                    response = requests.post(
-                        f"{settings.GATEWAY_URL}/api/mobile-service/mobiles/",
-                        json=product_data,
-                        headers=headers,
-                        timeout=5,
-                    )
-                    if response.status_code == 201:
-                        query = urlencode({"msg": "Đã thêm sản phẩm thành công"})
-                        return redirect(f"/staff/products/mobile?{query}")
-                except requests.RequestException:
-                    pass
-
-            query = urlencode({"error": "Lỗi khi thêm sản phẩm"})
-            return redirect(f"/staff/products/mobile?{query}")
-
-        if action == "update":
-            product_id_raw = request.POST.get("product_id", "0")
-            try:
-                product_id = int(product_id_raw)
-            except ValueError:
-                product_id = 0
-
-            if product_id <= 0:
-                query = urlencode({"error": "ID sản phẩm không hợp lệ"})
-                return redirect(f"/staff/products/mobile?{query}")
-
-            update_data = {
-                "name": request.POST.get("name", ""),
-                "brand": request.POST.get("brand", ""),
-                "price": int(float(request.POST.get("price", 0))),
-                "stock": int(request.POST.get("stock", 0)),
-                "description": request.POST.get("description", ""),
-                "category_id": int(request.POST.get("category", 0)),
-                "specs": {
-                    "screen_size": request.POST.get("screen_size", ""),
-                    "battery": request.POST.get("battery", ""),
-                    "camera": request.POST.get("camera", ""),
-                    "storage": request.POST.get("storage", ""),
-                    "ram": request.POST.get("ram", ""),
-                    "os": request.POST.get("os", ""),
-                },
-                "image": request.POST.get("image", ""),
-            }
-
-            headers = _staff_auth_headers(request)
-            if headers:
-                try:
-                    response = requests.put(
-                        f"{settings.GATEWAY_URL}/api/mobile-service/mobiles/{product_id}/",
-                        json=update_data,
-                        headers=headers,
-                        timeout=5,
-                    )
-                    if response.status_code == 200:
-                        query = urlencode({"msg": "Đã cập nhật sản phẩm thành công"})
-                        return redirect(f"/staff/products/mobile?{query}")
-                except requests.RequestException:
-                    pass
-
-            query = urlencode({"error": "Lỗi khi cập nhật sản phẩm"})
-            return redirect(f"/staff/products/mobile?{query}")
-
-    # Fetch categories and products
-    categories = _fetch_list("/api/mobile-service/categories/")
-
-    selected_search = request.GET.get("search", "").strip()
-    selected_brand = request.GET.get("brand", "").strip()
-    selected_category = request.GET.get("category", "").strip()
-    selected_price_min = request.GET.get("price_min", "").strip()
-    selected_price_max = request.GET.get("price_max", "").strip()
-    selected_stock_min = request.GET.get("stock_min", "").strip()
-    selected_stock_max = request.GET.get("stock_max", "").strip()
-    selected_sort = request.GET.get("sort", "newest").strip() or "newest"
-
-    params = ["page_size=300"]
-    if selected_search:
-        params.append(f"search={selected_search}")
-    if selected_brand:
-        params.append(f"brand={selected_brand}")
-    if selected_category:
-        params.append(f"category={selected_category}")
-    if selected_price_min:
-        params.append(f"price_min={selected_price_min}")
-    if selected_price_max:
-        params.append(f"price_max={selected_price_max}")
-
-    ordering_map = {
-        "newest": "-created_at",
-        "oldest": "created_at",
-        "price_asc": "price",
-        "price_desc": "-price",
-        "name_asc": "name",
-        "name_desc": "-name",
-    }
-    ordering = ordering_map.get(selected_sort)
-    if ordering:
-        params.append(f"ordering={ordering}")
-
-    products = _fetch_list("/api/mobile-service/mobiles/?" + "&".join(params))
-    stock_min = _to_number(selected_stock_min)
-    stock_max = _to_number(selected_stock_max)
-    products = _apply_staff_stock_filter_and_sort(
-        products if isinstance(products, list) else [],
-        stock_min,
-        stock_max,
-        selected_sort,
-    )
-
-    msg = request.GET.get("msg", "")
-    error = request.GET.get("error", "")
-    edit_id_raw = request.GET.get("edit", "")
-    try:
-        edit_id = int(edit_id_raw) if edit_id_raw else 0
-    except ValueError:
-        edit_id = 0
-
-    edit_product = None
-    if edit_id > 0:
-        edit_product = _fetch_detail(f"/api/mobile-service/mobiles/{edit_id}/")
-
-    context = {
-        "product_type": "mobile",
-        "product_type_vn": "Điện thoại",
-        "staff_products_path": "/staff/products/mobile",
-        "products": products,
-        "categories": categories if isinstance(categories, list) else [],
-        "edit_product": edit_product if isinstance(edit_product, dict) else None,
-        "brands": sorted(
-            {p.get("brand") for p in products if isinstance(p, dict) and p.get("brand")}
-        ),
-        "selected_search": selected_search,
-        "selected_brand": selected_brand,
-        "selected_category": selected_category,
-        "selected_price_min": selected_price_min,
-        "selected_price_max": selected_price_max,
-        "selected_stock_min": selected_stock_min,
-        "selected_stock_max": selected_stock_max,
-        "selected_sort": selected_sort,
-        "message": msg,
-        "error": error,
-        "auth_user_name": request.session.get("auth_user_name", ""),
-    }
-    return render(request, "store/staff/products.html", context)
+    return _staff_products_generic_view(request, "mobile")
 
 
 @_staff_required
@@ -2437,235 +2052,12 @@ def staff_customers_view(request):
 
 @_staff_required
 def staff_products_clothes_view(request):
-    """Manage clothes products."""
-    if request.method == "POST":
-        action = request.POST.get("action", "")
-
-        if action == "quick_stock":
-            product_id_raw = request.POST.get("product_id", "0")
-            stock_raw = request.POST.get("stock", "0")
-            try:
-                product_id = int(product_id_raw)
-                stock = int(stock_raw)
-            except ValueError:
-                query = urlencode({"error": "Dữ liệu số lượng không hợp lệ"})
-                return redirect(f"/staff/products/clothes?{query}")
-
-            if product_id <= 0 or stock < 0:
-                query = urlencode({"error": "ID hoặc số lượng không hợp lệ"})
-                return redirect(f"/staff/products/clothes?{query}")
-
-            headers = _staff_auth_headers(request)
-            if headers:
-                try:
-                    response = requests.patch(
-                        f"{settings.GATEWAY_URL}/api/clothes-service/clothes/{product_id}/stock/",
-                        json={"stock": stock},
-                        headers=headers,
-                        timeout=5,
-                    )
-                    if response.status_code == 200:
-                        query = urlencode({"msg": "Đã cập nhật số lượng"})
-                        return redirect(f"/staff/products/clothes?{query}")
-                except requests.RequestException:
-                    pass
-
-            query = urlencode({"error": "Lỗi khi cập nhật số lượng"})
-            return redirect(f"/staff/products/clothes?{query}")
-
-        if action == "delete":
-            product_id_raw = request.POST.get("product_id", "0")
-            try:
-                product_id = int(product_id_raw)
-            except ValueError:
-                product_id = 0
-
-            if product_id <= 0:
-                query = urlencode({"error": "ID sản phẩm không hợp lệ"})
-                return redirect(f"/staff/products/clothes?{query}")
-
-            headers = _staff_auth_headers(request)
-            if headers:
-                try:
-                    response = requests.delete(
-                        f"{settings.GATEWAY_URL}/api/clothes-service/clothes/{product_id}/",
-                        headers=headers,
-                        timeout=5,
-                    )
-                    if response.status_code == 204:
-                        query = urlencode({"msg": "Đã xóa sản phẩm"})
-                        return redirect(f"/staff/products/clothes?{query}")
-                except requests.RequestException:
-                    pass
-
-            query = urlencode({"error": "Lỗi khi xóa sản phẩm"})
-            return redirect(f"/staff/products/clothes?{query}")
-
-        if action == "add":
-            product_data = {
-                "name": request.POST.get("name", ""),
-                "brand": request.POST.get("brand", ""),
-                "price": int(float(request.POST.get("price", 0))),
-                "stock": int(request.POST.get("stock", 0)),
-                "description": request.POST.get("description", ""),
-                "category_id": int(request.POST.get("category", 0)),
-                "gender": request.POST.get("gender", "unisex"),
-                "specs": {
-                    "size": request.POST.get("size", ""),
-                    "color": request.POST.get("color", ""),
-                    "material": request.POST.get("material", ""),
-                },
-                "image": request.POST.get("image", ""),
-            }
-
-            headers = _staff_auth_headers(request)
-            if headers:
-                try:
-                    response = requests.post(
-                        f"{settings.GATEWAY_URL}/api/clothes-service/clothes/",
-                        json=product_data,
-                        headers=headers,
-                        timeout=5,
-                    )
-                    if response.status_code == 201:
-                        query = urlencode({"msg": "Đã thêm sản phẩm thành công"})
-                        return redirect(f"/staff/products/clothes?{query}")
-                except requests.RequestException:
-                    pass
-
-            query = urlencode({"error": "Lỗi khi thêm sản phẩm"})
-            return redirect(f"/staff/products/clothes?{query}")
-
-        if action == "update":
-            product_id_raw = request.POST.get("product_id", "0")
-            try:
-                product_id = int(product_id_raw)
-            except ValueError:
-                product_id = 0
-
-            if product_id <= 0:
-                query = urlencode({"error": "ID sản phẩm không hợp lệ"})
-                return redirect(f"/staff/products/clothes?{query}")
-
-            update_data = {
-                "name": request.POST.get("name", ""),
-                "brand": request.POST.get("brand", ""),
-                "price": int(float(request.POST.get("price", 0))),
-                "stock": int(request.POST.get("stock", 0)),
-                "description": request.POST.get("description", ""),
-                "category_id": int(request.POST.get("category", 0)),
-                "gender": request.POST.get("gender", "unisex"),
-                "specs": {
-                    "size": request.POST.get("size", ""),
-                    "color": request.POST.get("color", ""),
-                    "material": request.POST.get("material", ""),
-                },
-                "image": request.POST.get("image", ""),
-            }
-
-            headers = _staff_auth_headers(request)
-            if headers:
-                try:
-                    response = requests.put(
-                        f"{settings.GATEWAY_URL}/api/clothes-service/clothes/{product_id}/",
-                        json=update_data,
-                        headers=headers,
-                        timeout=5,
-                    )
-                    if response.status_code == 200:
-                        query = urlencode({"msg": "Đã cập nhật sản phẩm thành công"})
-                        return redirect(f"/staff/products/clothes?{query}")
-                except requests.RequestException:
-                    pass
-
-            query = urlencode({"error": "Lỗi khi cập nhật sản phẩm"})
-            return redirect(f"/staff/products/clothes?{query}")
-
-    # Fetch categories and products
-    categories = _fetch_list("/api/clothes-service/categories/")
-
-    selected_search = request.GET.get("search", "").strip()
-    selected_brand = request.GET.get("brand", "").strip()
-    selected_category = request.GET.get("category", "").strip()
-    selected_price_min = request.GET.get("price_min", "").strip()
-    selected_price_max = request.GET.get("price_max", "").strip()
-    selected_stock_min = request.GET.get("stock_min", "").strip()
-    selected_stock_max = request.GET.get("stock_max", "").strip()
-    selected_sort = request.GET.get("sort", "newest").strip() or "newest"
-
-    params = ["page_size=300"]
-    if selected_search:
-        params.append(f"search={selected_search}")
-    if selected_brand:
-        params.append(f"brand={selected_brand}")
-    if selected_category:
-        params.append(f"category={selected_category}")
-    if selected_price_min:
-        params.append(f"price_min={selected_price_min}")
-    if selected_price_max:
-        params.append(f"price_max={selected_price_max}")
-
-    ordering_map = {
-        "newest": "-created_at",
-        "oldest": "created_at",
-        "price_asc": "price",
-        "price_desc": "-price",
-        "name_asc": "name",
-        "name_desc": "-name",
-    }
-    ordering = ordering_map.get(selected_sort)
-    if ordering:
-        params.append(f"ordering={ordering}")
-
-    products = _fetch_list("/api/clothes-service/clothes/?" + "&".join(params))
-    stock_min = _to_number(selected_stock_min)
-    stock_max = _to_number(selected_stock_max)
-    products = _apply_staff_stock_filter_and_sort(
-        products if isinstance(products, list) else [],
-        stock_min,
-        stock_max,
-        selected_sort,
-    )
-
-    msg = request.GET.get("msg", "")
-    error = request.GET.get("error", "")
-    edit_id_raw = request.GET.get("edit", "")
-    try:
-        edit_id = int(edit_id_raw) if edit_id_raw else 0
-    except ValueError:
-        edit_id = 0
-
-    edit_product = None
-    if edit_id > 0:
-        edit_product = _fetch_detail(f"/api/clothes-service/clothes/{edit_id}/")
-
-    context = {
-        "product_type": "clothes",
-        "product_type_vn": "Quần áo",
-        "staff_products_path": "/staff/products/clothes",
-        "products": products,
-        "categories": categories if isinstance(categories, list) else [],
-        "edit_product": edit_product if isinstance(edit_product, dict) else None,
-        "brands": sorted(
-            {p.get("brand") for p in products if isinstance(p, dict) and p.get("brand")}
-        ),
-        "selected_search": selected_search,
-        "selected_brand": selected_brand,
-        "selected_category": selected_category,
-        "selected_price_min": selected_price_min,
-        "selected_price_max": selected_price_max,
-        "selected_stock_min": selected_stock_min,
-        "selected_stock_max": selected_stock_max,
-        "selected_sort": selected_sort,
-        "message": msg,
-        "error": error,
-        "auth_user_name": request.session.get("auth_user_name", ""),
-    }
-    return render(request, "store/staff/products.html", context)
+    return _staff_products_generic_view(request, "clothes")
 
 
 def _build_staff_product_payload(product_type, request):
     payload = {
+        "product_type": product_type,
         "name": request.POST.get("name", ""),
         "brand": request.POST.get("brand", ""),
         "price": int(float(request.POST.get("price", 0))),
@@ -2709,8 +2101,6 @@ def _staff_products_generic_view(request, product_type):
     if not cfg:
         raise Http404("Product type not supported")
 
-    service = cfg["service"]
-    resource = cfg["resource"]
     path = f"/staff/products/{product_type}"
 
     if request.method == "POST":
@@ -2734,7 +2124,7 @@ def _staff_products_generic_view(request, product_type):
             if headers:
                 try:
                     response = requests.patch(
-                        f"{settings.GATEWAY_URL}/api/{service}/{resource}/{product_id}/stock/",
+                        f"{settings.GATEWAY_URL}/api/catalog/products/{product_id}/stock/",
                         json={"stock": stock},
                         headers=headers,
                         timeout=5,
@@ -2763,7 +2153,7 @@ def _staff_products_generic_view(request, product_type):
             if headers:
                 try:
                     response = requests.delete(
-                        f"{settings.GATEWAY_URL}/api/{service}/{resource}/{product_id}/",
+                        f"{settings.GATEWAY_URL}/api/catalog/products/{product_id}/",
                         headers=headers,
                         timeout=5,
                     )
@@ -2783,7 +2173,7 @@ def _staff_products_generic_view(request, product_type):
             if headers:
                 try:
                     response = requests.post(
-                        f"{settings.GATEWAY_URL}/api/{service}/{resource}/",
+                        f"{settings.GATEWAY_URL}/api/catalog/products/",
                         json=product_data,
                         headers=headers,
                         timeout=5,
@@ -2814,7 +2204,7 @@ def _staff_products_generic_view(request, product_type):
             if headers:
                 try:
                     response = requests.put(
-                        f"{settings.GATEWAY_URL}/api/{service}/{resource}/{product_id}/",
+                        f"{settings.GATEWAY_URL}/api/catalog/products/{product_id}/",
                         json=update_data,
                         headers=headers,
                         timeout=5,
@@ -2828,7 +2218,7 @@ def _staff_products_generic_view(request, product_type):
             query = urlencode({"error": "Lỗi khi cập nhật sản phẩm"})
             return redirect(f"{path}?{query}")
 
-    categories = _fetch_list(f"/api/{service}/categories/")
+    categories = _fetch_list(f"/api/catalog/categories/?type={product_type}")
 
     selected_search = request.GET.get("search", "").strip()
     selected_brand = request.GET.get("brand", "").strip()
@@ -2840,12 +2230,13 @@ def _staff_products_generic_view(request, product_type):
     selected_sort = request.GET.get("sort", "newest").strip() or "newest"
 
     params = ["page_size=300"]
+    params.append(f"type={product_type}")
     if selected_search:
         params.append(f"search={selected_search}")
     if selected_brand:
         params.append(f"brand={selected_brand}")
     if selected_category:
-        params.append(f"category={selected_category}")
+        params.append(f"category_id={selected_category}")
     if selected_price_min:
         params.append(f"price_min={selected_price_min}")
     if selected_price_max:
@@ -2863,7 +2254,7 @@ def _staff_products_generic_view(request, product_type):
     if ordering:
         params.append(f"ordering={ordering}")
 
-    products = _fetch_list(f"/api/{service}/{resource}/?" + "&".join(params))
+    products = _fetch_list("/api/catalog/products/?" + "&".join(params))
     stock_min = _to_number(selected_stock_min)
     stock_max = _to_number(selected_stock_max)
     products = _apply_staff_stock_filter_and_sort(
@@ -2883,7 +2274,7 @@ def _staff_products_generic_view(request, product_type):
 
     edit_product = None
     if edit_id > 0:
-        edit_product = _fetch_detail(f"/api/{service}/{resource}/{edit_id}/")
+        edit_product = _fetch_detail(f"/api/catalog/products/{edit_id}/")
 
     context = {
         "product_type": product_type,
