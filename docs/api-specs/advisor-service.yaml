@@ -1,0 +1,37 @@
+openapi: 3.0.3
+info:
+  title: Advisor Service API
+  version: 0.1.0
+servers:
+  - url: http://advisor-service:8006
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+  /api/recommendations/:
+    post:
+      summary: Personalized recommendations
+      responses:
+        '200':
+          description: Recommendation results
+  /api/search/suggest/:
+    post:
+      summary: Keyword suggest
+      responses:
+        '200':
+          description: Suggest results
+  /api/search/semantic/:
+    post:
+      summary: Semantic product search
+      responses:
+        '200':
+          description: Search results
+  /api/events/track/:
+    post:
+      summary: Track behavior event
+      responses:
+        '201':
+          description: Event tracked

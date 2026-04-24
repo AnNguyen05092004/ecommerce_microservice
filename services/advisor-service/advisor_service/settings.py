@@ -18,7 +18,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
-    "advisor.middleware.AdvisorRateLimitMiddleware",
+    # "advisor.middleware.AdvisorRateLimitMiddleware",  # Temporarily disabled for development
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
@@ -46,34 +46,9 @@ KB_BOOTSTRAP_PATH = Path(
     )
 )
 
-COMPUTER_SERVICE_URL = os.environ.get(
-    "COMPUTER_SERVICE_URL", "http://computer-service:8003"
+PRODUCT_SERVICE_URL = os.environ.get(
+    "PRODUCT_SERVICE_URL", "http://product-service:8017"
 )
-MOBILE_SERVICE_URL = os.environ.get("MOBILE_SERVICE_URL", "http://mobile-service:8004")
-CLOTHES_SERVICE_URL = os.environ.get(
-    "CLOTHES_SERVICE_URL", "http://clothes-service:8005"
-)
-TABLET_SERVICE_URL = os.environ.get("TABLET_SERVICE_URL", "http://tablet-service:8007")
-AUDIO_SERVICE_URL = os.environ.get("AUDIO_SERVICE_URL", "http://audio-service:8008")
-WEARABLE_SERVICE_URL = os.environ.get(
-    "WEARABLE_SERVICE_URL", "http://wearable-service:8009"
-)
-COMPONENT_SERVICE_URL = os.environ.get(
-    "COMPONENT_SERVICE_URL", "http://component-service:8010"
-)
-PERIPHERAL_SERVICE_URL = os.environ.get(
-    "PERIPHERAL_SERVICE_URL", "http://peripheral-service:8011"
-)
-MONITOR_SERVICE_URL = os.environ.get(
-    "MONITOR_SERVICE_URL", "http://monitor-service:8012"
-)
-ACCESSORY_SERVICE_URL = os.environ.get(
-    "ACCESSORY_SERVICE_URL", "http://accessory-service:8013"
-)
-CHARGING_SERVICE_URL = os.environ.get(
-    "CHARGING_SERVICE_URL", "http://charging-service:8014"
-)
-BOOK_SERVICE_URL = os.environ.get("BOOK_SERVICE_URL", "http://book-service:8015")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 OPENAI_CHAT_MODEL = os.environ.get("OPENAI_CHAT_MODEL", "gpt-4o-mini")
 LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "openai").strip().lower()

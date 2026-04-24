@@ -9,34 +9,15 @@ def health_check(request):
 
 urlpatterns = [
     path("health", health_check, name="health-check"),
-    # Staff Service routes
-    re_path(r"^api/staff-service/(?P<path>.*)$", views.proxy_staff_service),
-    # Customer Service routes
-    re_path(r"^api/customer-service/(?P<path>.*)$", views.proxy_customer_service),
-    # Computer Service routes
-    re_path(r"^api/computer-service/(?P<path>.*)$", views.proxy_computer_service),
-    # Mobile Service routes
-    re_path(r"^api/mobile-service/(?P<path>.*)$", views.proxy_mobile_service),
-    # Clothes Service routes
-    re_path(r"^api/clothes-service/(?P<path>.*)$", views.proxy_clothes_service),
-    # Tablet Service routes
-    re_path(r"^api/tablet-service/(?P<path>.*)$", views.proxy_tablet_service),
-    # Audio Service routes
-    re_path(r"^api/audio-service/(?P<path>.*)$", views.proxy_audio_service),
-    # Wearable Service routes
-    re_path(r"^api/wearable-service/(?P<path>.*)$", views.proxy_wearable_service),
-    # Component Service routes
-    re_path(r"^api/component-service/(?P<path>.*)$", views.proxy_component_service),
-    # Peripheral Service routes
-    re_path(r"^api/peripheral-service/(?P<path>.*)$", views.proxy_peripheral_service),
-    # Monitor Service routes
-    re_path(r"^api/monitor-service/(?P<path>.*)$", views.proxy_monitor_service),
-    # Accessory Service routes
-    re_path(r"^api/accessory-service/(?P<path>.*)$", views.proxy_accessory_service),
-    # Charging Service routes
-    re_path(r"^api/charging-service/(?P<path>.*)$", views.proxy_charging_service),
-    # Book Service routes
-    re_path(r"^api/book-service/(?P<path>.*)$", views.proxy_book_service),
-    # Advisor Service routes
-    re_path(r"^api/advisor-service/(?P<path>.*)$", views.proxy_advisor_service),
+    # Bounded-context facades (DDD migration path)
+    re_path(r"^api/identity/(?P<path>.*)$", views.proxy_identity_context),
+    re_path(r"^api/catalog/(?P<path>.*)$", views.proxy_catalog_context),
+    re_path(r"^api/inventory/(?P<path>.*)$", views.proxy_inventory_context),
+    re_path(r"^api/cart/(?P<path>.*)$", views.proxy_cart_context),
+    re_path(r"^api/orders/(?P<path>.*)$", views.proxy_orders_context),
+    re_path(r"^api/payments/(?P<path>.*)$", views.proxy_payments_context),
+    re_path(r"^api/reviews/(?P<path>.*)$", views.proxy_reviews_context),
+    re_path(r"^api/advisor/(?P<path>.*)$", views.proxy_advisor_context),
+    # Legacy and dynamic service routes
+    re_path(r"^api/(?P<service_name>[a-z0-9-]+)/(?P<path>.*)$", views.proxy_service),
 ]

@@ -17,27 +17,14 @@ def _require_customer_user(request):
 
 
 def get_product_info(product_id, product_type):
-    """Fetch product info from product services by type."""
+    """Fetch product info from unified product-service by type."""
     try:
-        product_routes = {
-            "computer": (settings.COMPUTER_SERVICE_URL, "computers"),
-            "mobile": (settings.MOBILE_SERVICE_URL, "mobiles"),
-            "clothes": (settings.CLOTHES_SERVICE_URL, "clothes"),
-            "tablet": (settings.TABLET_SERVICE_URL, "tablets"),
-            "audio": (settings.AUDIO_SERVICE_URL, "audios"),
-            "wearable": (settings.WEARABLE_SERVICE_URL, "wearables"),
-            "component": (settings.COMPONENT_SERVICE_URL, "components"),
-            "peripheral": (settings.PERIPHERAL_SERVICE_URL, "peripherals"),
-            "monitor": (settings.MONITOR_SERVICE_URL, "monitors"),
-            "accessory": (settings.ACCESSORY_SERVICE_URL, "accessories"),
-            "charging": (settings.CHARGING_SERVICE_URL, "chargings"),
-            "book": (settings.BOOK_SERVICE_URL, "books"),
-        }
-        route = product_routes.get(product_type)
-        if not route:
+        if not product_type:
             return None
-        base_url, endpoint = route
-        url = f"{base_url}/api/{endpoint}/{product_id}/"
+        url = (
+            f"{settings.PRODUCT_SERVICE_URL}/api/products/"
+            f"{str(product_type).strip().lower()}/{product_id}/"
+        )
 
         response = requests.get(url, timeout=5)
         if response.status_code == 200:

@@ -1,0 +1,42 @@
+openapi: 3.0.3
+info:
+  title: Identity Service API
+  version: 0.1.0
+servers:
+  - url: http://identity-service:8016
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+  /api/auth/login/:
+    post:
+      summary: Login skeleton
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login response
+  /api/auth/verify/:
+    post:
+      summary: Verify token skeleton
+      responses:
+        '200':
+          description: Verify response
+  /api/users/me/:
+    get:
+      summary: Current user profile skeleton
+      responses:
+        '200':
+          description: Profile response

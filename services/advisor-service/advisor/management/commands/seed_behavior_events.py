@@ -47,7 +47,35 @@ EVENT_TEMPLATES = {
     ],
 }
 
-PRODUCT_TYPES = ["computer", "mobile", "clothes"]
+PRODUCT_TYPES = [
+    "computer",
+    "mobile",
+    "tablet",
+    "audio",
+    "wearable",
+    "component",
+    "peripheral",
+    "monitor",
+    "accessory",
+    "charging",
+    "book",
+    "clothes",
+]
+
+SEARCH_QUERY_BY_TYPE = {
+    "computer": ["laptop gaming", "may tinh van phong", "pc do hoa"],
+    "mobile": ["dien thoai pin trau", "smartphone chup anh", "phone cho sinh vien"],
+    "tablet": ["ipad hoc online", "tablet ve design", "may tinh bang doc sach"],
+    "audio": ["tai nghe chong on", "loa bluetooth", "headphone nghe nhac"],
+    "wearable": ["dong ho thong minh", "smartwatch the thao", "vong deo suc khoe"],
+    "component": ["ssd nvme", "ram ddr5", "cpu gaming"],
+    "peripheral": ["ban phim co", "chuot gaming", "webcam hoc online"],
+    "monitor": ["man hinh 2k", "monitor do hoa", "man hinh 144hz"],
+    "accessory": ["phu kien laptop", "op lung dien thoai", "de do laptop"],
+    "charging": ["cu sac nhanh", "sac du phong", "charger type c"],
+    "book": ["sach cong nghe", "sach lap trinh", "book machine learning"],
+    "clothes": ["ao khoac", "quan jean", "thoi trang cong so"],
+}
 
 
 class Command(BaseCommand):
@@ -84,26 +112,19 @@ class Command(BaseCommand):
                 base_product_id = random.randint(1, 20)
 
                 for offset, event_type in enumerate(template):
+                    query_text = ""
+                    if event_type == "search":
+                        choices = SEARCH_QUERY_BY_TYPE.get(product_type, [product_type])
+                        query_text = random.choice(choices)
+
                     event = UserEvent.objects.create(
                         user_id=user_id,
                         session_id=session_id,
                         event_type=event_type,
                         product_type=product_type,
                         product_id=base_product_id + (offset % 3),
-                        category_id=random.randint(1, 6),
-                        query_text=(
-                            (
-                                "laptop gaming"
-                                if product_type == "computer"
-                                else (
-                                    "dien thoai pin trau"
-                                    if product_type == "mobile"
-                                    else "ao khoac"
-                                )
-                            )
-                            if event_type == "search"
-                            else ""
-                        ),
+                        category_id=random.randint(1, len(PRODUCT_TYPES)),
+                        query_text=query_text,
                         language="vi" if random.random() < 0.7 else "en",
                         metadata={
                             "seeded": True,

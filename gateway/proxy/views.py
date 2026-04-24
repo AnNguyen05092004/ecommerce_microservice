@@ -8,51 +8,29 @@ from django.views.decorators.csrf import csrf_exempt
 # File này là người bảo vệ cửa — ai muốn vào service đích phải trình token hợp lệ, sau đó được chuyển tiếp request tới đúng nơi.
 
 # ── Routes that DO NOT require authentication ────────────
-PUBLIC_ROUTES = [
-    # Staff
-    "api/auth/login/",
-    # Customer
-    "api/auth/login/",
-    "api/auth/register/",
-    # Advisor
-    "api/events/track/",
-    "api/events/trending/",
-    "api/search/suggest/",
-    "api/search/semantic/",
-    "api/recommendations/",
-    "api/chat/",
-    # Products (GET only)
-    "api/computers/",
-    "api/mobiles/",
-    "api/categories/",
-    # Reviews (GET only)
-    "api/reviews/",
-]
+PUBLIC_ROUTES = []
 
 
 def is_public_route(path, method):
     """Check if the route is public (no auth needed)"""
+    if path == "health":
+        return True
+
     # Auth endpoints are always public
     if "auth/login" in path or "auth/register" in path or "auth/verify" in path:
         return True
 
-    # GET requests to product listings and categories are public
+    # Public read endpoints for DDD-only stack
     if method == "GET":
         public_prefixes = [
-            "computers",
-            "mobiles",
-            "clothes",
-            "tablets",
-            "audios",
-            "wearables",
-            "components",
-            "peripherals",
-            "monitors",
-            "accessories",
-            "chargings",
-            "books",
+            "products",
+            "product-types",
             "categories",
             "reviews",
+            "inventory",
+            "carts",
+            "orders",
+            "payments",
             "events/trending",
             "ai/health",
             "ai/metrics",
@@ -68,6 +46,23 @@ def is_public_route(path, method):
             "search/semantic",
             "recommendations",
             "chat",
+            "inventory",
+            "carts",
+            "orders",
+            "payments",
+            "reviews",
+        ]
+        for prefix in public_prefixes:
+            if path.startswith(prefix):
+                return True
+
+    if method == "PATCH":
+        public_prefixes = [
+            "carts/",
+            "orders/",
+            "payments/",
+            "reviews/",
+            "inventory/",
         ]
         for prefix in public_prefixes:
             if path.startswith(prefix):
@@ -89,7 +84,10 @@ def verify_jwt_token(token):
 
 def forward_request(request, target_url, path):
     """Forward the request to the target service"""
-    url = f"{target_url}/api/{path}"
+    if path == "health":
+        url = f"{target_url}/health"
+    else:
+        url = f"{target_url}/api/{path}"
 
     # Prepare headers
     headers = {
@@ -164,76 +162,64 @@ def gateway_view(request, path, service_url):
     return forward_request(request, service_url, path)
 
 
-@csrf_exempt
-def proxy_staff_service(request, path):
-    return gateway_view(request, path, settings.STAFF_SERVICE_URL)
+def _resolve_service_url(service_name):
+    registry = getattr(settings, "SERVICE_REGISTRY", {}) or {}
+    return registry.get(service_name)
 
 
 @csrf_exempt
-def proxy_customer_service(request, path):
-    return gateway_view(request, path, settings.CUSTOMER_SERVICE_URL)
+def proxy_service(request, service_name, path):
+    service_url = _resolve_service_url(service_name)
+    if not service_url:
+        return JsonResponse(
+            {
+                "error": "Unknown service",
+                "detail": f"Service '{service_name}' is not registered",
+            },
+            status=404,
+        )
+    return gateway_view(request, path, service_url)
+
+
+def _proxy_context(request, path, service_key):
+    return proxy_service(request, service_key, path)
 
 
 @csrf_exempt
-def proxy_computer_service(request, path):
-    return gateway_view(request, path, settings.COMPUTER_SERVICE_URL)
+def proxy_identity_context(request, path):
+    return _proxy_context(request, path, "identity")
 
 
 @csrf_exempt
-def proxy_mobile_service(request, path):
-    return gateway_view(request, path, settings.MOBILE_SERVICE_URL)
+def proxy_catalog_context(request, path):
+    return _proxy_context(request, path, "catalog")
 
 
 @csrf_exempt
-def proxy_clothes_service(request, path):
-    return gateway_view(request, path, settings.CLOTHES_SERVICE_URL)
+def proxy_inventory_context(request, path):
+    return _proxy_context(request, path, "inventory")
 
 
 @csrf_exempt
-def proxy_tablet_service(request, path):
-    return gateway_view(request, path, settings.TABLET_SERVICE_URL)
+def proxy_cart_context(request, path):
+    return _proxy_context(request, path, "cart")
 
 
 @csrf_exempt
-def proxy_audio_service(request, path):
-    return gateway_view(request, path, settings.AUDIO_SERVICE_URL)
+def proxy_orders_context(request, path):
+    return _proxy_context(request, path, "orders")
 
 
 @csrf_exempt
-def proxy_wearable_service(request, path):
-    return gateway_view(request, path, settings.WEARABLE_SERVICE_URL)
+def proxy_payments_context(request, path):
+    return _proxy_context(request, path, "payments")
 
 
 @csrf_exempt
-def proxy_component_service(request, path):
-    return gateway_view(request, path, settings.COMPONENT_SERVICE_URL)
+def proxy_reviews_context(request, path):
+    return _proxy_context(request, path, "reviews")
 
 
 @csrf_exempt
-def proxy_peripheral_service(request, path):
-    return gateway_view(request, path, settings.PERIPHERAL_SERVICE_URL)
-
-
-@csrf_exempt
-def proxy_monitor_service(request, path):
-    return gateway_view(request, path, settings.MONITOR_SERVICE_URL)
-
-
-@csrf_exempt
-def proxy_accessory_service(request, path):
-    return gateway_view(request, path, settings.ACCESSORY_SERVICE_URL)
-
-
-@csrf_exempt
-def proxy_charging_service(request, path):
-    return gateway_view(request, path, settings.CHARGING_SERVICE_URL)
-
-
-@csrf_exempt
-def proxy_book_service(request, path):
-    return gateway_view(request, path, settings.BOOK_SERVICE_URL)
-
-
-@csrf_exempt
-def proxy_advisor_service(request, path):
-    return gateway_view(request, path, settings.ADVISOR_SERVICE_URL)
+def proxy_advisor_context(request, path):
+    return _proxy_context(request, path, "advisor")

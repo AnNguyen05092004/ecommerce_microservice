@@ -1,0 +1,47 @@
+openapi: 3.0.3
+info:
+  title: Review Service API
+  version: 0.1.0
+servers:
+  - url: http://review-service:8022
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+  /api/reviews/:
+    get:
+      summary: List reviews skeleton
+      responses:
+        '200':
+          description: Review list
+    post:
+      summary: Create review skeleton
+      responses:
+        '201':
+          description: Created
+  /api/reviews/{review_id}/status/:
+    get:
+      summary: Get review status skeleton
+      parameters:
+        - in: path
+          name: review_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Status
+    patch:
+      summary: Update review status skeleton
+      parameters:
+        - in: path
+          name: review_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Updated

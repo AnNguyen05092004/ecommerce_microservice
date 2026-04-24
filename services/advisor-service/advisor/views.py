@@ -3,12 +3,14 @@ import logging
 import re
 import time
 from collections import Counter, deque
+from pathlib import Path
 from types import SimpleNamespace
 import unicodedata
 
 import requests
 from django.conf import settings
 from django.core.cache import cache
+from django.http import HttpResponse
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -17,7 +19,9 @@ from .logging_config import LogContext, setup_logging, get_request_id
 from .ml.kb import get_retrieval_mode, retrieve_documents
 from .ml.kb_graph import retrieve_products_graph
 from .ml.metrics import get_metrics
+from .ml.model_selection_report import PRODUCTION_MODEL_MANIFEST
 from .ml.recommend import (
+    SERVICE_ENDPOINTS,
     fetch_products,
     recommend_products,
     summarize_behavior,
@@ -126,6 +130,9 @@ SEED_KEYWORDS = {
         "khuyến mãi hôm nay",
     ],
 }
+
+SUPPORTED_PRODUCT_TYPES = list(SERVICE_ENDPOINTS.keys())
+SUPPORTED_PRODUCT_TYPE_SET = set(SUPPORTED_PRODUCT_TYPES)
 
 
 def _normalize_text(value: str) -> str:
@@ -236,10 +243,7 @@ def _build_source_attribution(documents):
     doc = documents[0]
     title = getattr(doc, "title", "") or "Tai lieu tham khao"
     source = getattr(doc, "source", "") or ""
-    if source:
-        text = f"Dua tren: [{title}] - {source}"
-    else:
-        text = f"Dua tren: [{title}]"
+    text = f"Thong tin tham khao: {title}"
 
     return {"text": text, "title": title, "source": source}
 
@@ -455,16 +459,38 @@ def _prepare_context_documents(documents, max_chars: int = 320):
 
 def _detect_product_type_intent(message: str):
     normalized = _normalize_text(message)
-    if any(
-        token in normalized for token in ["iphone", "android", "dien thoai", "mobile"]
-    ):
-        return "mobile"
-    if any(token in normalized for token in ["laptop", "notebook", "macbook", "pc"]):
-        return "computer"
-    if any(
-        token in normalized for token in ["ao", "quan", "vay", "thoi trang", "clothes"]
-    ):
-        return "clothes"
+    intent_keywords = {
+        "mobile": ["iphone", "android", "dien thoai", "mobile", "smartphone"],
+        "computer": ["laptop", "notebook", "macbook", "pc", "may tinh", "computer"],
+        "clothes": ["ao", "quan", "vay", "thoi trang", "clothes"],
+        "tablet": ["tablet", "ipad", "may tinh bang"],
+        "audio": ["tai nghe", "audio", "headphone", "loa"],
+        "wearable": ["wearable", "smartwatch", "dong ho thong minh"],
+        "component": ["linh kien", "ram", "cpu", "ssd", "gpu"],
+        "peripheral": ["ban phim", "chuot", "peripheral", "keyboard", "mouse"],
+        "monitor": ["man hinh", "monitor"],
+        "accessory": ["phu kien dien thoai", "phu kien", "op lung", "dan man hinh"],
+        "charging": ["sac", "charger", "cap sac", "pin du phong", "powerbank"],
+        "book": ["sach", "book"],
+    }
+
+    best_type = "all"
+    best_score = 0
+
+    for product_type, keywords in intent_keywords.items():
+        score = 0
+        for token in keywords:
+            if token in normalized:
+                # Give slightly higher weight for longer/specific phrases.
+                score += max(1, min(4, len(token.split())))
+
+        if score > best_score:
+            best_score = score
+            best_type = product_type
+
+    if best_score > 0:
+        return best_type
+
     return "all"
 
 
@@ -477,8 +503,8 @@ def _catalog_documents_from_query(message: str, language: str = "vi", limit: int
         return []
 
     intent_type = _detect_product_type_intent(message)
-    product_types = ["computer", "mobile", "clothes"]
-    if intent_type in {"computer", "mobile", "clothes"}:
+    product_types = SUPPORTED_PRODUCT_TYPES.copy()
+    if intent_type in SUPPORTED_PRODUCT_TYPE_SET:
         product_types = [intent_type] + [
             pt for pt in product_types if pt != intent_type
         ]
@@ -534,6 +560,26 @@ def _catalog_documents_from_query(message: str, language: str = "vi", limit: int
     return selected
 
 
+def _filter_documents_by_intent(documents, intent_type: str, limit: int = 6):
+    if intent_type not in SUPPORTED_PRODUCT_TYPE_SET:
+        return list(documents or [])[:limit]
+
+    generic_categories = {"", "all", "policy", "faq", "operations"}
+    filtered = []
+    for doc in documents or []:
+        category = str(getattr(doc, "category", "") or "").strip().lower()
+        source = str(getattr(doc, "source", "") or "").strip().lower()
+        if category == intent_type or category in generic_categories:
+            filtered.append(doc)
+            continue
+        if source.startswith(f"catalog:{intent_type}:"):
+            filtered.append(doc)
+
+    if filtered:
+        return filtered[:limit]
+    return list(documents or [])[:limit]
+
+
 def _build_rag_prompt(
     message: str, language: str, summary: dict, recommendations, context_docs
 ):
@@ -557,35 +603,51 @@ def _insufficient_evidence_answer(language: str):
 
 
 def _fallback_chat_answer(message: str, docs, summary, recommendations, language: str):
-    doc_lines = [f"- {doc.title}: {doc.content[:180]}" for doc in docs[:3]]
-    citations = [f"[{doc.source or 'kb'}:{doc.title}]" for doc in docs[:3]]
+    doc_titles = [
+        str(getattr(doc, "title", "") or "Tai lieu tham khao") for doc in docs[:3]
+    ]
+    recommendation_lines = []
+    for item in recommendations[:3]:
+        name = str(item.get("name") or "San pham")
+        price = item.get("price")
+        if price is None or price == "":
+            recommendation_lines.append(f"- {name}")
+        else:
+            recommendation_lines.append(f"- {name} (gia tham khao: {price})")
+
     if language.lower().startswith("en"):
-        intro = (
-            "I could not use the cloud model, so here is a grounded fallback answer."
+        intro = "Here are practical suggestions based on available store data."
+        recommendation_block = (
+            "\n".join(recommendation_lines)
+            if recommendation_lines
+            else "- No matching products yet"
         )
-        behavior_line = f"Recent behavior: buy_score={summary['buy_score']}, top_categories={', '.join(summary['top_categories']) or 'none'}."
-        recommendation_line = (
-            ", ".join(item.get("name", "product") for item in recommendations[:3])
-            or "No recommendation yet"
+        source_note = (
+            f"Reference: {', '.join(doc_titles)}"
+            if doc_titles
+            else "Reference: Internal catalog data"
         )
         return (
-            f"{intro}\n\n{behavior_line}\n\nRelevant knowledge:\n"
-            + "\n".join(doc_lines)
-            + f"\n\nSuggested products: {recommendation_line}."
-            + (f"\n\nSources: {', '.join(citations)}" if citations else "")
+            f"{intro}\n\nRecommended options:\n{recommendation_block}"
+            + "\n\nIf you share your budget and main use, I can narrow this down to the best 2-3 choices for you."
+            + f"\n\n{source_note}"
         )
 
-    intro = "Khong dung duoc cloud model nen day la cau tra loi fallback co neo theo du lieu hien co."
-    behavior_line = f"Hanh vi gan day: buy_score={summary['buy_score']}, nhom quan tam={', '.join(summary['top_categories']) or 'chua ro'}."
-    recommendation_line = (
-        ", ".join(item.get("name", "san pham") for item in recommendations[:3])
-        or "Chua co goi y"
+    intro = "Minh goi y nhanh cho ban dua tren du lieu hien co:"
+    recommendation_block = (
+        "\n".join(recommendation_lines)
+        if recommendation_lines
+        else "- Hien chua co san pham phu hop"
+    )
+    source_note = (
+        f"Thong tin tham khao: {', '.join(doc_titles)}"
+        if doc_titles
+        else "Thong tin tham khao: Du lieu catalog noi bo"
     )
     return (
-        f"{intro}\n\n{behavior_line}\n\nThong tin lien quan:\n"
-        + "\n".join(doc_lines)
-        + f"\n\nSan pham goi y: {recommendation_line}."
-        + (f"\n\nNguon: {', '.join(citations)}" if citations else "")
+        f"{intro}\n\n{recommendation_block}"
+        + "\n\nNeu ban cho minh muc gia va nhu cau chinh (hoc tap, choi game, chup anh...), minh se loc ra 2-3 lua chon sat nhat."
+        + f"\n\n{source_note}"
     )
 
 
@@ -630,7 +692,7 @@ def keyword_suggestions(request):
         return Response({"results": []})
 
     product_type = (payload.get("product_type") or "all").lower()
-    if product_type not in {"computer", "mobile", "clothes"}:
+    if product_type not in SUPPORTED_PRODUCT_TYPE_SET:
         product_type = "all"
     limit = payload.get("limit", 5)
 
@@ -838,9 +900,23 @@ def chat(request):
             status=status.HTTP_200_OK,
         )
 
+    intent_type = _detect_product_type_intent(payload["message"])
+    requested_types = intent_type if intent_type in SUPPORTED_PRODUCT_TYPE_SET else ""
+
     summary, recommendations_payload = recommend_products(
-        user_id=user_id, session_id=session_id, limit=4
+        user_id=user_id,
+        session_id=session_id,
+        limit=4,
+        product_types=requested_types,
     )
+    if requested_types:
+        recommendations_payload = [
+            item
+            for item in recommendations_payload
+            if str(item.get("product_type", "")).lower() == requested_types
+        ]
+        if len(recommendations_payload) > 4:
+            recommendations_payload = recommendations_payload[:4]
 
     cache_key = _cache_key(
         payload["message"],
@@ -875,6 +951,7 @@ def chat(request):
         for doc in catalog_docs:
             if doc.source not in existing_sources:
                 documents.append(doc)
+    documents = _filter_documents_by_intent(documents, intent_type, limit=6)
     retrieval_ms = (time.perf_counter() - retrieval_start) * 1000
     retrieval_mode = get_retrieval_mode()
     if catalog_docs:
@@ -925,7 +1002,7 @@ def chat(request):
         metrics.record_error("chat", "grounding_failed")
         log_ctx.warning("Chat grounding check failed", result_code=200)
 
-    if source_attribution.get("text"):
+    if used_cloud and source_attribution.get("text"):
         answer = f"{answer}\n\n{source_attribution['text']}"
 
     if session_id:
@@ -1019,10 +1096,40 @@ def chat(request):
 @api_view(["GET"])
 def ai_health(request):
     advisor_status = metrics.get_health_status()
+    neo4j_connected = False
+    behavior_manifest = {}
+    try:
+        from advisor.ml.kb_graph import get_neo4j_driver  # noqa: PLC0415
+
+        neo4j_connected = get_neo4j_driver() is not None
+    except Exception:  # noqa: BLE001
+        neo4j_connected = False
+
+    manifest_path = Path(settings.ARTIFACTS_DIR) / PRODUCTION_MODEL_MANIFEST
+    if manifest_path.exists():
+        try:
+            behavior_manifest = json.loads(manifest_path.read_text())
+        except (OSError, ValueError):
+            behavior_manifest = {}
+
     return Response(
         {
             "status": "ok",
             "advisor_status": advisor_status,
+            "retrieval_mode": get_retrieval_mode(),
+            "behavior_model": {
+                "selected_model": behavior_manifest.get("selected_model", "mlp"),
+                "selection_basis": behavior_manifest.get(
+                    "selection_basis", "metrics_fallback"
+                ),
+                "selected_model_score": behavior_manifest.get("selected_model_score"),
+                "generated_at": behavior_manifest.get("generated_at"),
+            },
+            "neo4j": {
+                "enabled": bool(getattr(settings, "NEO4J_ENABLED", True)),
+                "connected": neo4j_connected,
+                "uri": getattr(settings, "NEO4J_URI", ""),
+            },
             "circuit_breaker": {
                 "is_open": _is_circuit_open(),
                 "consecutive_failures": CB_STATE["consecutive_failures"],
@@ -1145,3 +1252,31 @@ def ai_health_detailed(request):
             "error_rate": metrics.get_snapshot().get("error_rate", 0),
         }
     )
+
+
+@api_view(["GET"])
+def ai_report(request, report_key: str):
+    report_map = {
+        "model-comparison": Path(settings.ARTIFACTS_DIR)
+        / "model_comparison_report.html",
+        "benchmark": Path(settings.ARTIFACTS_DIR) / "advisor_benchmark_report.html",
+    }
+    target = report_map.get(str(report_key or "").strip().lower())
+    if not target:
+        return Response(
+            {"status": "error", "detail": "Unknown report"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    if not target.exists():
+        return Response(
+            {"status": "error", "detail": f"Report not generated yet: {target.name}"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    try:
+        content = target.read_text(encoding="utf-8")
+    except OSError as exc:
+        return Response(
+            {"status": "error", "detail": str(exc)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+    return HttpResponse(content, content_type="text/html; charset=utf-8")

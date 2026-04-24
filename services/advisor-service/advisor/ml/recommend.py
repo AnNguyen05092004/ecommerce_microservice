@@ -4,39 +4,24 @@ from datetime import timedelta
 import requests
 from django.conf import settings
 
-from advisor.ml.behavior_v2 import infer_behavior_v2
+from advisor.ml.behavior_runtime import infer_behavior
 from advisor.ml.ranker_v2 import build_popularity_counter, rank_products_v2
 from advisor.models import UserEvent
 
 
 SERVICE_ENDPOINTS = {
-    "computer": (settings.COMPUTER_SERVICE_URL, "/api/computers/"),
-    "mobile": (settings.MOBILE_SERVICE_URL, "/api/mobiles/"),
-    "clothes": (settings.CLOTHES_SERVICE_URL, "/api/clothes/"),
-    "tablet": (getattr(settings, "TABLET_SERVICE_URL", ""), "/api/tablets/"),
-    "audio": (getattr(settings, "AUDIO_SERVICE_URL", ""), "/api/audios/"),
-    "wearable": (
-        getattr(settings, "WEARABLE_SERVICE_URL", ""),
-        "/api/wearables/",
-    ),
-    "component": (
-        getattr(settings, "COMPONENT_SERVICE_URL", ""),
-        "/api/components/",
-    ),
-    "peripheral": (
-        getattr(settings, "PERIPHERAL_SERVICE_URL", ""),
-        "/api/peripherals/",
-    ),
-    "monitor": (getattr(settings, "MONITOR_SERVICE_URL", ""), "/api/monitors/"),
-    "accessory": (
-        getattr(settings, "ACCESSORY_SERVICE_URL", ""),
-        "/api/accessories/",
-    ),
-    "charging": (
-        getattr(settings, "CHARGING_SERVICE_URL", ""),
-        "/api/chargings/",
-    ),
-    "book": (getattr(settings, "BOOK_SERVICE_URL", ""), "/api/books/"),
+    "computer": (settings.PRODUCT_SERVICE_URL, "/api/products/?type=computer"),
+    "mobile": (settings.PRODUCT_SERVICE_URL, "/api/products/?type=mobile"),
+    "clothes": (settings.PRODUCT_SERVICE_URL, "/api/products/?type=clothes"),
+    "tablet": (settings.PRODUCT_SERVICE_URL, "/api/products/?type=tablet"),
+    "audio": (settings.PRODUCT_SERVICE_URL, "/api/products/?type=audio"),
+    "wearable": (settings.PRODUCT_SERVICE_URL, "/api/products/?type=wearable"),
+    "component": (settings.PRODUCT_SERVICE_URL, "/api/products/?type=component"),
+    "peripheral": (settings.PRODUCT_SERVICE_URL, "/api/products/?type=peripheral"),
+    "monitor": (settings.PRODUCT_SERVICE_URL, "/api/products/?type=monitor"),
+    "accessory": (settings.PRODUCT_SERVICE_URL, "/api/products/?type=accessory"),
+    "charging": (settings.PRODUCT_SERVICE_URL, "/api/products/?type=charging"),
+    "book": (settings.PRODUCT_SERVICE_URL, "/api/products/?type=book"),
 }
 
 ALL_PRODUCT_TYPES = list(SERVICE_ENDPOINTS.keys())
@@ -195,7 +180,10 @@ def fetch_products(product_type: str, limit: int = 12):
         return []
 
     try:
-        response = requests.get(f"{service_url}{endpoint}?page_size={limit}", timeout=8)
+        separator = "&" if "?" in endpoint else "?"
+        response = requests.get(
+            f"{service_url}{endpoint}{separator}page_size={limit}", timeout=8
+        )
         if response.status_code != 200:
             return []
         payload = response.json()
@@ -260,7 +248,7 @@ def summarize_behavior(user_id: str = "", session_id: str = ""):
             category_counter.most_common(1)[0][0] if category_counter else "computer"
         ),
     }
-    behavior_profile = infer_behavior_v2(
+    behavior_profile = infer_behavior(
         feature_payload, settings.ARTIFACTS_DIR, events=events
     )
 

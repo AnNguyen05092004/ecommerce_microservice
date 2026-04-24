@@ -13,6 +13,7 @@ urlpatterns = [
     path("ai/health/", views.ai_health, name="ai-health"),
     path("ai/health/detailed/", views.ai_health_detailed, name="ai-health-detailed"),
     path("ai/metrics/", views.ai_metrics, name="ai-metrics"),
+    path("ai/reports/<str:report_key>/", views.ai_report, name="ai-report"),
     path("metrics/latest/", views.metrics_latest, name="metrics-latest"),
     path("metrics/timeseries/", views.metrics_timeseries, name="metrics-timeseries"),
 ]

@@ -1,0 +1,16 @@
+{
+  "mode": "gru_v1",
+  "rows": 800,
+  "train_rows": 640,
+  "test_rows": 160,
+  "accuracy": 0.4125,
+  "macro_f1": 0.3623,
+  "classes": [
+    "impulse_buyer",
+    "researcher",
+    "loyal_customer",
+    "price_sensitive",
+    "window_shopper"
+  ],
+  "epochs": 30
+}

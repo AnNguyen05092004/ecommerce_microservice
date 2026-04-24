@@ -120,9 +120,54 @@
       </div>
     </section>
     {% endif %}
+
+    <section class="advisor-section" style="margin-top: 18px;">
+      <div class="advisor-head">
+        <div>
+          <h2>Gợi ý thêm trước khi thanh toán</h2>
+          <p>AI chọn sản phẩm liên quan dựa trên giỏ hàng hiện tại của bạn.</p>
+        </div>
+        {% if advisor_summary.top_categories %}
+        <span class="advisor-chip">Quan tâm nhiều: {{ advisor_summary.top_categories|join:", " }}</span>
+        {% endif %}
+      </div>
+      <div class="product-grid advisor-grid">
+        {% for product in advisor_recommendations %}
+        <a class="product-link" href="{{ product.detail_url }}">
+          <article class="product-card advisor-card">
+            <div class="image-wrap">
+              <img src="{{ product.image }}" alt="{{ product.name }}" />
+            </div>
+            <div class="product-body">
+              <div class="meta">{{ product.brand }} • {{ product.product_type|upper }}</div>
+              <h3>{{ product.name }}</h3>
+              <div class="price-line"><strong>{{ product.price }}</strong></div>
+              <p class="advisor-reason">{{ product.reason }}</p>
+            </div>
+          </article>
+        </a>
+        {% empty %}
+        <div class="empty-state">
+          <i data-lucide="sparkles"></i>
+          <h3>Chưa có gợi ý bổ sung</h3>
+          <p>Tiếp tục thêm sản phẩm để hệ thống gợi ý combo tốt hơn.</p>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
   </main>
 
   <script src="https://unpkg.com/lucide@latest"></script>
-  <script>lucide.createIcons();</script>
+  <script src="{% static 'store/js/advisor-widget.js' %}"></script>
+  <script>
+    lucide.createIcons();
+    initAdvisorWidget({
+      pageName: "cart",
+      chatUrl: "/advisor/chat",
+      eventUrl: "/advisor/event",
+      storageKey: "advisor-chat-history-cart",
+      suggestionChips: ["Goi y san pham di kem", "Combo tiet kiem", "Nen mua them gi?"],
+    });
+  </script>
 </body>
 </html>

@@ -1,0 +1,55 @@
+{
+  "generated_at": "2026-04-20T15:41:11.118701+00:00",
+  "selected_model": "gru",
+  "selection_basis": "highest_macro_f1",
+  "selected_model_score": 0.3623,
+  "selected_model_accuracy": 0.4125,
+  "fallback_model": "mlp",
+  "candidates": [
+    {
+      "name": "mlp",
+      "mode": "bootstrap_heuristic_fallback",
+      "macro_f1": null,
+      "accuracy": null,
+      "rows": 0,
+      "train_rows": 0,
+      "test_rows": 0
+    },
+    {
+      "name": "rnn",
+      "mode": "rnn_v1",
+      "macro_f1": 0.3281,
+      "accuracy": 0.3563,
+      "rows": 800,
+      "train_rows": 640,
+      "test_rows": 160
+    },
+    {
+      "name": "gru",
+      "mode": "gru_v1",
+      "macro_f1": 0.3623,
+      "accuracy": 0.4125,
+      "rows": 800,
+      "train_rows": 640,
+      "test_rows": 160
+    },
+    {
+      "name": "lstm",
+      "mode": "lstm_v1",
+      "macro_f1": 0.2833,
+      "accuracy": 0.3563,
+      "rows": 800,
+      "train_rows": 640,
+      "test_rows": 160
+    },
+    {
+      "name": "bilstm",
+      "mode": "bilstm_v1",
+      "macro_f1": 0.3346,
+      "accuracy": 0.3688,
+      "rows": 800,
+      "train_rows": 640,
+      "test_rows": 160
+    }
+  ]
+}

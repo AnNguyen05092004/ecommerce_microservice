@@ -1,0 +1,12 @@
+{
+  "mode": "bootstrap_heuristic_fallback",
+  "rows": 0,
+  "classes": [
+    "impulse_buyer",
+    "researcher",
+    "loyal_customer",
+    "price_sensitive",
+    "window_shopper"
+  ],
+  "note": "Dataset parse/train failed during bootstrap: No columns to parse from file"
+}

@@ -8,6 +8,8 @@ from django.core.management import call_command
 from django.core.management.base import BaseCommand
 
 from advisor.ml.behavior_gru import train_behavior_gru
+from advisor.ml.behavior_lstm import train_behavior_lstm
+from advisor.ml.behavior_bilstm import train_behavior_bilstm
 from advisor.ml.behavior_v2 import (
     BehaviorV2HeuristicModel,
     METRICS_FILENAME,
@@ -16,6 +18,7 @@ from advisor.ml.behavior_v2 import (
 )
 from advisor.ml.kb_vector import build_kb_hybrid_index
 from advisor.ml.kb_graph import build_kb_graph
+from advisor.ml.model_selection_report import write_model_selection_artifacts
 
 
 class Command(BaseCommand):
@@ -37,6 +40,12 @@ class Command(BaseCommand):
             type=int,
             default=25,
             help="GRU epochs when training behavior GRU (default: 25)",
+        )
+        parser.add_argument(
+            "--lstm-epochs",
+            type=int,
+            default=25,
+            help="LSTM/BiLSTM epochs when training sequence models (default: 25)",
         )
 
     def _ensure_behavior_fallback_artifact(self, artifacts_dir: Path, note: str):
@@ -63,7 +72,9 @@ class Command(BaseCommand):
             kb_metrics["graph"] = {"status": "skipped", "reason": str(exc)}
         return kb_metrics
 
-    def _bootstrap_behavior(self, artifacts_dir: Path, gru_epochs: int):
+    def _bootstrap_behavior(
+        self, artifacts_dir: Path, gru_epochs: int, lstm_epochs: int
+    ):
         call_command("build_behavior_dataset")
         dataset_path = artifacts_dir / "behavior_dataset.csv"
         sequence_path = artifacts_dir / "behavior_sequences.json"
@@ -112,6 +123,40 @@ class Command(BaseCommand):
                 "note": "behavior_sequences.json unavailable during bootstrap",
             }
 
+        if sequence_path.exists() and sequence_path.stat().st_size > 0:
+            try:
+                behavior_metrics["behavior_lstm"] = train_behavior_lstm(
+                    sequence_path, artifacts_dir, epochs=max(1, int(lstm_epochs))
+                )
+            except Exception as exc:  # noqa: BLE001
+                behavior_metrics["behavior_lstm"] = {
+                    "mode": "bootstrap_lstm_failed",
+                    "note": str(exc),
+                }
+
+            try:
+                behavior_metrics["behavior_bilstm"] = train_behavior_bilstm(
+                    sequence_path, artifacts_dir, epochs=max(1, int(lstm_epochs))
+                )
+            except Exception as exc:  # noqa: BLE001
+                behavior_metrics["behavior_bilstm"] = {
+                    "mode": "bootstrap_bilstm_failed",
+                    "note": str(exc),
+                }
+        else:
+            behavior_metrics["behavior_lstm"] = {
+                "mode": "sequence_missing",
+                "note": "behavior_sequences.json unavailable during bootstrap",
+            }
+            behavior_metrics["behavior_bilstm"] = {
+                "mode": "sequence_missing",
+                "note": "behavior_sequences.json unavailable during bootstrap",
+            }
+
+        behavior_metrics["production_selection"] = write_model_selection_artifacts(
+            artifacts_dir
+        )
+
         return behavior_metrics
 
     def handle(self, *args, **options):
@@ -131,7 +176,7 @@ class Command(BaseCommand):
         if not options["skip_behavior"]:
             self.stdout.write("Bootstrapping behavior artifacts...")
             summary["behavior"] = self._bootstrap_behavior(
-                artifacts_dir, options["gru_epochs"]
+                artifacts_dir, options["gru_epochs"], options["lstm_epochs"]
             )
 
         summary_path = artifacts_dir / "bootstrap_ai_artifacts_report.json"
